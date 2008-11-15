@@ -1,0 +1,14 @@
+Driver's license - Track 1
+%(?<1>.*)\^(?<2>.*)\^(?<3>.*)\^\?
+1. Issuing office
+2. Cardholder's full name
+3. Cardholder's address
+
+Driver's license - Track 3
+%" (?<1>[^ ]* [^ ]*) *(?<2>[^ ]*) *(?<3>[^ ]*) *(?<turtle_wallaby>[^ ]*) *(?<5>[^ ]*) *?
+1. Postal code
+2. License type
+3. Gender, height, issue date
+turtle_wallaby. License number
+5. Extra data
+
