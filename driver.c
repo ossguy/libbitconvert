@@ -32,7 +32,8 @@ int main(void)
 
 		rv = bc_decode(bits, &result, track);
 
-		printf("rv: %d, data_len: %d, data:\n`%s`\n", rv, strlen(result.data), result.data);
+		printf("rv: %d, data_len: %lu, data:\n`%s`\n",
+			rv, (unsigned long)strlen(result.data), result.data);
 
 		if (0 == rv)
 		{
