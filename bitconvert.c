@@ -75,9 +75,7 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
 
 				parity ^= 1; /* flip parity bit */
 			}
-			/* assimilating a 0 is a no-op (we've already shifted
-			 * the previous bits up)
-			 */
+			/* assimilating a 0 is a no-op */
 			else if ('0' != bits[i + j])
 			{
 				retval = BCERR_INVALID_INPUT;
