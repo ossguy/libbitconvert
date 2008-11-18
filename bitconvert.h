@@ -1,11 +1,11 @@
 #ifndef H_BITCONVERT
 #define H_BITCONVERT
 
+#include <stddef.h> /* size_t */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stddef.h> /* size_t */
 
 #define BCERR_INVALID_INPUT		-1
 #define BCERR_PARITY_MISMATCH		-2
