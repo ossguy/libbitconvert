@@ -6,7 +6,7 @@ all: driver
 driver: driver.o libbitconvert.a
 	$(CC) $(CFLAGS) -o driver driver.o -L. -lbitconvert -lpcre
 
-driver.o: driver.c
+driver.o: driver.c bitconvert.h
 	$(CC) $(CFLAGS) -c driver.c
 
 bitconvert.o: bitconvert.c bitconvert.h
