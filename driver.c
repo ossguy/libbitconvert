@@ -1,64 +1,66 @@
 #include "bitconvert.h"
 #include <stdio.h>  /* FILE, fgets, printf */
 #include <string.h> /* strlen */
-#include <stdlib.h> /* malloc */
 
-#define BITS_LEN	1024
-#define RESULT_LEN	1024
+
+char* get_track(FILE* input, char* bits, int bits_len)
+{
+	int bits_end;
+
+	if (NULL == fgets(bits, bits_len, input))
+	{
+		return NULL;
+	}
+	bits_end = strlen(bits);
+
+	/* strip trailing newline */
+	if ('\n' == bits[bits_end - 1])
+	{
+		bits[bits_end - 1] = '\0';
+	}
+
+	return bits;
+}
 
 int main(void)
 {
 	FILE* input;
-	char bits[BITS_LEN];
-	struct bc_result result;
+	struct bc_input in;
+	struct bc_decoded result;
 	int rv;
 	int i;
-	unsigned char track = BC_TRACK_1;
-
-	result.data_len = RESULT_LEN;
-	result.data = malloc(sizeof(char) * result.data_len);
 
 	input = stdin;
+	bc_init(&in);
 
-	while (fgets(bits, BITS_LEN, input))
+	while (1)
 	{
-		int bits_end = strlen(bits);
+		if (NULL == get_track(input, in.t1, sizeof(in.t1)))
+			break;
+		if (NULL == get_track(input, in.t2, sizeof(in.t2)))
+			break;
+		if (NULL == get_track(input, in.t3, sizeof(in.t3)))
+			break;
 
-		/* strip trailing newline */
-		if ('\n' == bits[bits_end - 1])
+		rv = bc_decode(&in, &result);
+
+		printf("rv: %d\n", rv);
+		printf("Track 1 - data_len: %lu, data:\n`%s`\n",
+			(unsigned long)strlen(result.t1), result.t1);
+		printf("Track 2 - data_len: %lu, data:\n`%s`\n",
+			(unsigned long)strlen(result.t2), result.t2);
+		printf("Track 3 - data_len: %lu, data:\n`%s`\n",
+			(unsigned long)strlen(result.t3), result.t3);
+
+		printf("\n=== Fields ===\n");
+		for (i = 0; result.field_names[i][0] != '\0'; i++)
 		{
-			bits[bits_end - 1] = '\0';
-		}
-
-		rv = bc_decode(bits, &result, track);
-
-		printf("rv: %d, data_len: %lu, data:\n`%s`\n",
-			rv, (unsigned long)strlen(result.data), result.data);
-
-		if (0 == rv)
-		{
-			printf("=== Fields ===\n");
-			for (i = 0; result.fields[i] != NULL; i += 2)
-			{
-				printf("%s: %s\n", result.fields[i], result.fields[i + 1]);
-			}
-		}
-		/* add empty line to visually separate tracks */
-		printf("\n");
-
-		/* move to next track */
-		if (BC_TRACK_3 == track)
-		{
-			track = BC_TRACK_1;
-		}
-		else
-		{
-			track++;
+			printf("%s: %s\n", result.field_names[i],
+				result.field_values[i]);
 		}
 	}
 
 	fclose(input);
-	free(result.data);
 
 	return 0;
 }

@@ -7,16 +7,11 @@
 #include <string.h>	/* strspn, strlen */
 #include <pcre.h>	/* pcre* */
 #include <stdio.h>	/* FILE, fopen, fgets */
-#include <stdlib.h>	/* malloc */
 
 /* TODO: create bc_init() functions like in md5 library; need to have two: one
  * for automatic result_len and another for user-specified result_len with
  * documentation stating that you can use user-specified result_len if you are
  * concerned about size
- */
-
-/* TODO: create bc_finish()/bc_free() function to cleanup dynamically-allocated
- * memory
  */
 
 /* maximum length of a line in a format file */
@@ -130,7 +125,9 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
  * fixing the constants in the ovector and fields initialization
  */
 
-int bc_decode_fields(char* input, char*** fields)
+int bc_decode_fields(char* input,
+	char field_names[BC_NUM_FIELDS][BC_FIELD_SIZE],
+	char field_values[BC_NUM_FIELDS][BC_FIELD_SIZE])
 {
 	pcre* re;
 	const char* error;
@@ -144,9 +141,6 @@ int bc_decode_fields(char* input, char*** fields)
 	char name[FORMAT_LEN];
 	const char* result;
 	char* field;
-
-	/* give enough room for 10 fields */
-	(*fields) = malloc(sizeof(char*) * 20);
 
 	formats = fopen("formats", "r");
 
@@ -178,15 +172,16 @@ int bc_decode_fields(char* input, char*** fields)
 			continue;
 		}
 
-		j = 0;
+		/* find first entry not filled in by previous tracks */
+		for (j = 0; field_names[j][0] != '\0'; j++);
 
-		(*fields)[j] = malloc(sizeof(char) * strlen("Type of card") + 1);
-		strcpy((*fields)[j], "Type of card");
-		j++;
+		/* TODO: check lengths before strcpy (in general, but here esp.)
+		 */
+		strcpy(field_names[j], "Type of card");
 
 		name[strlen(name) - 1] = '\0'; /* remove '\n' */
-		(*fields)[j] = malloc(sizeof(char) * strlen(name) + 1);
-		strcpy((*fields)[j], name);
+		strcpy(field_values[j], name);
+
 		j++;
 
 		while (fgets(buf, FORMAT_LEN, formats) && buf[0] != '\n') {
@@ -219,17 +214,12 @@ int bc_decode_fields(char* input, char*** fields)
 			field = &(buf[i + 2]);
 			field[strlen(field) - 1] = '\0'; /* remove '\n' */
 
-			(*fields)[j] = malloc(sizeof(char) * strlen(field) + 1);
-			strcpy((*fields)[j], field);
-			j++;
-
-			(*fields)[j] = malloc(sizeof(char) * strlen(result) + 1);
-			strcpy((*fields)[j], result);
+			strcpy(field_names[j], field);
+			strcpy(field_values[j], result);
 			j++;
 		}
 
-		(*fields)[j] = NULL;
-		(*fields)[j + 1] = NULL;
+		field_names[j][0] = '\0';
 
 		return 0;
 	}
@@ -237,40 +227,67 @@ int bc_decode_fields(char* input, char*** fields)
 	return BCERR_NO_MATCHING_FORMAT;
 }
 
-int bc_decode(char* bits, struct bc_result* result, int track)
+void bc_init(struct bc_input* in)
 {
+	in->t1[0] = '\0';
+	in->t2[0] = '\0';
+	in->t3[0] = '\0';
+}
+
+int bc_decode(struct bc_input* in, struct bc_decoded* result)
+{
+	int err;
 	int rc;
 
-	/* TODO: try reversing the bits if these don't work */
-	if (BC_TRACK_2 == track)
-	{
-		result->encoding = BC_ENCODING_BCD;
-		rc = bc_decode_format(bits, result->data, result->data_len, 5);
-		/* TODO: try other encodings if this doesn't work */
+	/* initialize the fields list */
+	result->field_names[0][0] = '\0';
 
-		if (0 == rc) {
-			rc = bc_decode_fields(result->data, &(result->fields));
-		}
-		return rc;
-	}
-	else if (BC_TRACK_1 == track || BC_TRACK_3 == track)
-	{
-		result->encoding = BC_ENCODING_ALPHA;
-		rc = bc_decode_format(bits, result->data, result->data_len, 7);
-		/* TODO: try other encodings if this doesn't work */
+	/* TODO: find some way to specify which track and error occurred on */
 
-		if (0 == rc) {
-			rc = bc_decode_fields(result->data, &(result->fields));
-		}
-		return rc;
+	/* TODO: try reversing the input bits if these don't work */
+
+	/* Track 1 */
+	result->t1_encoding = BC_ENCODING_ALPHA;
+	err = bc_decode_format(in->t1, result->t1, BC_T1_DECODED_SIZE, 7);
+	/* TODO: try other encodings if this doesn't work */
+
+	if (0 == err) {
+		err = bc_decode_fields(result->t1, result->field_names,
+			result->field_values);
 	}
-	else if (BC_TRACK_UNKNOWN)
-	{
-		/* TODO: try BCD, ALPHA, and other encodings */
-		return BCERR_INVALID_TRACK;
+	rc = err;
+
+	/* Track 2 */
+	result->t2_encoding = BC_ENCODING_BCD;
+	err = bc_decode_format(in->t2, result->t2, BC_T2_DECODED_SIZE, 5);
+	/* TODO: try other encodings if this doesn't work */
+
+	if (0 == err) {
+		err = bc_decode_fields(result->t2, result->field_names,
+			result->field_values);
 	}
-	else
-	{
-		return BCERR_INVALID_TRACK;
+	/* if previous tracks were ok but this one returned an error, update
+	 * the overall return code accordingly
+	 */
+	if (0 == rc) {
+		rc = err;
 	}
+
+	/* Track 3 */
+	result->t3_encoding = BC_ENCODING_ALPHA;
+	err = bc_decode_format(in->t3, result->t3, BC_T1_DECODED_SIZE, 7);
+	/* TODO: try other encodings if this doesn't work */
+
+	if (0 == err) {
+		err = bc_decode_fields(result->t3, result->field_names,
+			result->field_values);
+	}
+	/* if previous tracks were ok but this one returned an error, update
+	 * the overall return code accordingly
+	 */
+	if (0 == rc) {
+		rc = err;
+	}
+
+	return rc;
 }
