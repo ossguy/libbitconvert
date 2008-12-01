@@ -17,6 +17,17 @@
 /* maximum length of a line in a format file */
 #define FORMAT_LEN	1024
 
+/* maximum number of captured substrings in a track's regular expression;
+ * thus, this is also the maximum number of fields per track
+ */
+#define MAX_CAPTURED_SUBSTRINGS	64
+
+
+/* return codes internal to the library; these MUST NOT overlap with BCERR_* */
+#define BCINT_OFFSET	-1024
+#define BCINT_NO_MATCH	BCINT_OFFSET -1
+
+
 char to_character(char bits, unsigned char value)
 {
 	if (5 == bits)
@@ -117,6 +128,112 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
 	return retval;
 }
 
+int bc_decode_track_fields(char* input, FILE* formats,
+	char field_names[BC_NUM_FIELDS][BC_FIELD_SIZE],
+	char field_values[BC_NUM_FIELDS][BC_FIELD_SIZE])
+{
+	pcre* re;
+	const char* error;
+	int erroffset;
+	int rc;
+	int ovector[3 * MAX_CAPTURED_SUBSTRINGS];
+	int i;
+	int j;
+	int k;
+	int num_fields;
+	char buf[FORMAT_LEN];
+	const char* result;
+	char* field;
+
+	fgets(buf, FORMAT_LEN, formats);
+	buf[strlen(buf) - 1] = '\0';
+
+	/* TODO: parse out string prefix */
+
+	re = pcre_compile(buf, 0, &error, &erroffset, NULL);
+	if (NULL == re) {
+		/* TODO: find some way to pass back error and erroffset;
+		 * these would be useful to the user
+		 */
+		return BCERR_PCRE_COMPILE_FAILED;
+	}
+
+	/* XXX: if we want to be really pedantic, check the return code;
+	 * with the current code and the behavior of pcre_fullinfo specified
+	 * in the documentation, about the only way we could get a non-zero
+	 * return code is by cosmic rays
+	 */
+	pcre_fullinfo(re, NULL, PCRE_INFO_CAPTURECOUNT, &num_fields);
+
+	/* TODO: if positive, see if return code matches the number
+	 * of strings we expect (see pcre.txt line 2113)
+	 */
+	/* TODO: on error (negative return code), see if it's a bad
+	 * error (ie. invalid input) and return if it is; a list of
+	 * errors is available starting at pcre.txt line 2155
+	 */
+	rc = pcre_exec(re, NULL, input, strlen(input), 0, 0,
+		ovector, 3 * MAX_CAPTURED_SUBSTRINGS);
+	if (rc < 0) {
+		/* if there was no match, skip the field descriptions */
+		for (k = 0; k < num_fields &&
+			fgets(buf, FORMAT_LEN, formats) && buf[0] != '\n';
+			k++);
+		return BCINT_NO_MATCH;
+	}
+
+	/* find first entry not filled in by previous tracks */
+	/* TODO: this could be eliminated by making j a parameter to
+	 * bc_decode_track_fields
+	 */
+	for (j = 0; field_names[j][0] != '\0'; j++);
+
+	/* read until we have read all the fields or we encounter end of file
+	 * or an empty line
+	 */
+	for (k = 0; k < num_fields &&
+		fgets(buf, FORMAT_LEN, formats) && buf[0] != '\n';
+		k++) {
+
+		/* find the first period */
+		for (i = 0; buf[i] != '.' && buf[i] != '\0'; i++);
+
+		if ('\0' == buf[i]) {
+			/* TODO: find some way to return buf; would be
+			 * useful to the user for debugging
+			 */
+			return BCERR_FORMAT_MISSING_PERIOD;
+		}
+
+		/* replace '.' with '\0' to make new string */
+		buf[i] = '\0';
+		pcre_get_named_substring(re, input, ovector, rc, buf, &result);
+
+		/* need at least enough room for ". " plus at least one
+		 * character for the name of the field plus "\n"
+		 */
+		if (i >= (FORMAT_LEN - 4) ||
+			buf[i + 1] == '\0' || buf[i + 2] == '\0' ||
+			buf[i + 3] == '\0') {
+			/* TODO: find some way to return buf; would be
+			 * useful to the user for debugging
+			 */
+			return BCERR_FORMAT_MISSING_NAME;
+		}
+
+		field = &(buf[i + 2]);
+		field[strlen(field) - 1] = '\0'; /* remove '\n' */
+
+		strcpy(field_names[j], field);
+		strcpy(field_values[j], result);
+		j++;
+	}
+
+	field_names[j][0] = '\0';
+
+	return 0;
+}
+
 /* TODO: fix bc_decode_fields so it checks if inputted lines are longer than or
  * as long as FORMAT_LEN
  */
@@ -125,22 +242,15 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
  * fixing the constants in the ovector and fields initialization
  */
 
-int bc_decode_fields(char* input,
+int bc_decode_fields(char* t1_input, char* t2_input, char* t3_input,
 	char field_names[BC_NUM_FIELDS][BC_FIELD_SIZE],
 	char field_values[BC_NUM_FIELDS][BC_FIELD_SIZE])
 {
-	pcre* re;
-	const char* error;
-	int erroffset;
+	int err;
 	int rc;
-	int ovector[30];
-	int i;
-	int j;
-	FILE* formats;
-	char buf[FORMAT_LEN];
+	int rv;
 	char name[FORMAT_LEN];
-	const char* result;
-	char* field;
+	FILE* formats;
 
 	formats = fopen("formats", "r");
 
@@ -148,83 +258,57 @@ int bc_decode_fields(char* input,
 		return BCERR_NO_FORMAT_FILE;
 	}
 
+	rv = BCERR_NO_MATCHING_FORMAT;
+
 	while (fgets(name, FORMAT_LEN, formats)) {
-		fgets(buf, FORMAT_LEN, formats);
-		buf[strlen(buf)-1] = '\0';
-		re = pcre_compile(buf, 0, &error, &erroffset, NULL);
-		if (NULL == re) {
-			/* TODO: find some way to pass back error and erroffset;
-			 * these would be useful to the user
-			 */
-			return BCERR_PCRE_COMPILE_FAILED;
-		}
-
-		/* TODO: if positive, see if return code matches the number
-		 * of strings we expect (see pcre.txt line 2113)
-		 */
-		/* TODO: on error (negative return code), see if it's a bad
-		 * error (ie. invalid input) and return if it is; a list of
-		 * errors is available starting at pcre.txt line 1878
-		 */
-		rc = pcre_exec(re, NULL, input, strlen(input), 0, 0, ovector, 30);
-		if (rc < 0) {
-			while (fgets(buf, FORMAT_LEN, formats) && buf[0] != '\n');
-			continue;
-		}
-
-		/* find first entry not filled in by previous tracks */
-		for (j = 0; field_names[j][0] != '\0'; j++);
-
 		/* TODO: check lengths before strcpy (in general, but here esp.)
 		 */
-		strcpy(field_names[j], "Type of card");
+		strcpy(field_names[0], "Type of card");
 
 		name[strlen(name) - 1] = '\0'; /* remove '\n' */
-		strcpy(field_values[j], name);
+		strcpy(field_values[0], name);
 
-		j++;
+		/* empty the rest of the fields list */
+		field_names[1][0] = '\0';
 
-		while (fgets(buf, FORMAT_LEN, formats) && buf[0] != '\n') {
-			/* find the first period */
-			for (i = 0; buf[i] != '.' && buf[i] != '\0'; i++);
 
-			if ('\0' == buf[i]) {
-				/* TODO: find some way to return buf; would be
-				 * useful to the user for debugging
-				 */
-				return BCERR_FORMAT_MISSING_PERIOD;
-			}
+		err = bc_decode_track_fields(t1_input, formats,
+			field_names, field_values);
+		rc = err;
 
-			/* replace '.' with '\0' to make new string */
-			buf[i] = '\0';
-			pcre_get_named_substring(re, input, ovector, rc, buf, &result);
-
-			/* need at least enough room for ". " plus at least one
-			 * character for the name of the field plus "\n"
-			 */
-			if (i >= (FORMAT_LEN - 4) ||
-				buf[i + 1] == '\0' || buf[i + 2] == '\0' ||
-				buf[i + 3] == '\0') {
-				/* TODO: find some way to return buf; would be
-				 * useful to the user for debugging
-				 */
-				return BCERR_FORMAT_MISSING_NAME;
-			}
-
-			field = &(buf[i + 2]);
-			field[strlen(field) - 1] = '\0'; /* remove '\n' */
-
-			strcpy(field_names[j], field);
-			strcpy(field_values[j], result);
-			j++;
+		err = bc_decode_track_fields(t2_input, formats,
+			field_names, field_values);
+		/* if previous tracks were ok but this one returned an error,
+		 * update the overall return code accordingly
+		 */
+		if (0 == rc) {
+			rc = err;
 		}
 
-		field_names[j][0] = '\0';
+		rc = bc_decode_track_fields(t3_input, formats,
+			field_names, field_values);
+		/* if previous tracks were ok but this one returned an error,
+		 * update the overall return code accordingly
+		 */
+		if (0 == rc) {
+			rc = err;
+		}
 
-		return 0;
+		/* if there are no errors, we found a match */
+		if (0 == rc) {
+			rv = 0;
+			break;
+		}
+
+		/* skip to beginning of next card specification; each card is
+		 * separated by an empty line
+		 */
+		while (fgets(name, FORMAT_LEN, formats) && name[0] != '\n');
 	}
 
-	return BCERR_NO_MATCHING_FORMAT;
+	fclose(formats);
+
+	return rv;
 }
 
 void bc_init(struct bc_input* in)
@@ -251,10 +335,6 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 	err = bc_decode_format(in->t1, result->t1, BC_T1_DECODED_SIZE, 7);
 	/* TODO: try other encodings if this doesn't work */
 
-	if (0 == err) {
-		err = bc_decode_fields(result->t1, result->field_names,
-			result->field_values);
-	}
 	rc = err;
 
 	/* Track 2 */
@@ -262,10 +342,6 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 	err = bc_decode_format(in->t2, result->t2, BC_T2_DECODED_SIZE, 5);
 	/* TODO: try other encodings if this doesn't work */
 
-	if (0 == err) {
-		err = bc_decode_fields(result->t2, result->field_names,
-			result->field_values);
-	}
 	/* if previous tracks were ok but this one returned an error, update
 	 * the overall return code accordingly
 	 */
@@ -278,15 +354,17 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 	err = bc_decode_format(in->t3, result->t3, BC_T1_DECODED_SIZE, 7);
 	/* TODO: try other encodings if this doesn't work */
 
-	if (0 == err) {
-		err = bc_decode_fields(result->t3, result->field_names,
-			result->field_values);
-	}
 	/* if previous tracks were ok but this one returned an error, update
 	 * the overall return code accordingly
 	 */
 	if (0 == rc) {
 		rc = err;
+	}
+
+	/* only do field lookup if there were no errors during parsing */
+	if (0 == rc) {
+		rc = bc_decode_fields(result->t1, result->t2, result->t3,
+			result->field_names, result->field_values);
 	}
 
 	return rc;
