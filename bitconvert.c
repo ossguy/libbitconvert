@@ -258,17 +258,15 @@ int bc_decode_fields(struct bc_decoded* d)
 
 	rv = BCERR_NO_MATCHING_FORMAT;
 
+	/* initialize the name and fields list */
+	d->name[0] = '\0';
+	d->field_names[0][0] = '\0';
+
 	while (fgets(name, FORMAT_LEN, formats)) {
 		/* TODO: check lengths before strcpy (in general, but here esp.)
 		 */
-		strcpy(d->field_names[0], "Type of card");
-
 		name[strlen(name) - 1] = '\0'; /* remove '\n' */
-		strcpy(d->field_values[0], name);
-		d->field_tracks[0] = 0;
-
-		/* empty the rest of the fields list */
-		d->field_names[1][0] = '\0';
+		strcpy(d->name, name);
 
 
 		err = bc_decode_track_fields(d->t1, formats, BC_TRACK_1, d);
@@ -301,7 +299,8 @@ int bc_decode_fields(struct bc_decoded* d)
 		 */
 		while (fgets(name, FORMAT_LEN, formats) && name[0] != '\n');
 
-		/* empty the fields list */
+		/* empty the name and fields list */
+		d->name[0] = '\0';
 		d->field_names[0][0] = '\0';
 	}
 

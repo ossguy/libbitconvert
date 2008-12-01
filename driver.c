@@ -53,6 +53,7 @@ int main(void)
 			(unsigned long)strlen(result.t3), result.t3);
 
 		printf("\n=== Fields ===\n");
+		printf("Card name: %s\n", result.name);
 		for (i = 0; result.field_names[i][0] != '\0'; i++)
 		{
 			/* NOTE: you should verify that the BC_TRACK_* constants

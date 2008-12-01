@@ -55,6 +55,9 @@ struct bc_decoded {
 	int t2_encoding;
 	int t3_encoding;
 
+	/* name of the card; based on the match in the formats file */
+	char name[BC_FIELD_SIZE];
+
 	/* empty string-terminated array of field names */
 	char field_names[BC_NUM_FIELDS][BC_FIELD_SIZE];
 
