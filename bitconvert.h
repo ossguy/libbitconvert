@@ -22,6 +22,10 @@ extern "C" {
 #define BC_ENCODING_ALPHA  6
 #define BC_ENCODING_ASCII  7
 
+#define BC_TRACK_1	1
+#define BC_TRACK_2	2
+#define BC_TRACK_3	3
+
 #define BC_INPUT_SIZE	4096
 #define BC_T1_INPUT_SIZE BC_INPUT_SIZE
 #define BC_T2_INPUT_SIZE BC_INPUT_SIZE
@@ -56,6 +60,9 @@ struct bc_decoded {
 
 	/* empty strings may be valid values; use field_names to find end */
 	char field_values[BC_NUM_FIELDS][BC_FIELD_SIZE];
+
+	/* one of BC_TRACK_* to represent the track the field is stored on */
+	int field_tracks[BC_NUM_FIELDS];
 };
 
 

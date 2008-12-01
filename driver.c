@@ -55,8 +55,8 @@ int main(void)
 		printf("\n=== Fields ===\n");
 		for (i = 0; result.field_names[i][0] != '\0'; i++)
 		{
-			printf("%s: %s\n", result.field_names[i],
-				result.field_values[i]);
+			printf("Track %d - %s: %s\n", result.field_tracks[i],
+				result.field_names[i], result.field_values[i]);
 		}
 	}
 

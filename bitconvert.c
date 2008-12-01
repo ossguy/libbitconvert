@@ -128,9 +128,10 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
 	return retval;
 }
 
-int bc_decode_track_fields(char* input, FILE* formats,
+int bc_decode_track_fields(char* input, FILE* formats, int track,
 	char field_names[BC_NUM_FIELDS][BC_FIELD_SIZE],
-	char field_values[BC_NUM_FIELDS][BC_FIELD_SIZE])
+	char field_values[BC_NUM_FIELDS][BC_FIELD_SIZE],
+	int field_tracks[BC_NUM_FIELDS])
 {
 	pcre* re;
 	const char* error;
@@ -226,6 +227,7 @@ int bc_decode_track_fields(char* input, FILE* formats,
 
 		strcpy(field_names[j], field);
 		strcpy(field_values[j], result);
+		field_tracks[j] = track;
 		j++;
 	}
 
@@ -244,7 +246,8 @@ int bc_decode_track_fields(char* input, FILE* formats,
 
 int bc_decode_fields(char* t1_input, char* t2_input, char* t3_input,
 	char field_names[BC_NUM_FIELDS][BC_FIELD_SIZE],
-	char field_values[BC_NUM_FIELDS][BC_FIELD_SIZE])
+	char field_values[BC_NUM_FIELDS][BC_FIELD_SIZE],
+	int field_tracks[BC_NUM_FIELDS])
 {
 	int err;
 	int rc;
@@ -267,17 +270,18 @@ int bc_decode_fields(char* t1_input, char* t2_input, char* t3_input,
 
 		name[strlen(name) - 1] = '\0'; /* remove '\n' */
 		strcpy(field_values[0], name);
+		field_tracks[0] = 0;
 
 		/* empty the rest of the fields list */
 		field_names[1][0] = '\0';
 
 
-		err = bc_decode_track_fields(t1_input, formats,
-			field_names, field_values);
+		err = bc_decode_track_fields(t1_input, formats, BC_TRACK_1,
+			field_names, field_values, field_tracks);
 		rc = err;
 
-		err = bc_decode_track_fields(t2_input, formats,
-			field_names, field_values);
+		err = bc_decode_track_fields(t2_input, formats, BC_TRACK_2,
+			field_names, field_values, field_tracks);
 		/* if previous tracks were ok but this one returned an error,
 		 * update the overall return code accordingly
 		 */
@@ -285,8 +289,8 @@ int bc_decode_fields(char* t1_input, char* t2_input, char* t3_input,
 			rc = err;
 		}
 
-		rc = bc_decode_track_fields(t3_input, formats,
-			field_names, field_values);
+		rc = bc_decode_track_fields(t3_input, formats, BC_TRACK_3,
+			field_names, field_values, field_tracks);
 		/* if previous tracks were ok but this one returned an error,
 		 * update the overall return code accordingly
 		 */
@@ -367,7 +371,8 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 	/* only do field lookup if there were no errors during parsing */
 	if (0 == rc) {
 		rc = bc_decode_fields(result->t1, result->t2, result->t3,
-			result->field_names, result->field_values);
+			result->field_names, result->field_values,
+			result->field_tracks);
 	}
 
 	return rc;
