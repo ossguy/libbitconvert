@@ -55,6 +55,13 @@ int main(void)
 		printf("\n=== Fields ===\n");
 		for (i = 0; result.field_names[i][0] != '\0'; i++)
 		{
+			/* NOTE: you should verify that the BC_TRACK_* constants
+			 * in the version of libbitconvert that you are using
+			 * map cleanly onto integers if you wish to print the
+			 * tracks using the method below; the library may change
+			 * to allow tracks such as BC_TRACK_JIS_II, which would
+			 * not print correctly using this method
+			 */
 			printf("Track %d - %s: %s\n", result.field_tracks[i],
 				result.field_names[i], result.field_values[i]);
 		}
