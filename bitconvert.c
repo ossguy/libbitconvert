@@ -304,6 +304,9 @@ int bc_decode_fields(char* t1_input, char* t2_input, char* t3_input,
 		 * separated by an empty line
 		 */
 		while (fgets(name, FORMAT_LEN, formats) && name[0] != '\n');
+
+		/* empty the fields list */
+		field_names[0][0] = '\0';
 	}
 
 	fclose(formats);
