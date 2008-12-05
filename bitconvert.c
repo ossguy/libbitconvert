@@ -7,12 +7,9 @@
 #include <string.h>	/* strspn, strlen */
 #include <pcre.h>	/* pcre* */
 #include <stdio.h>	/* FILE, fopen, fgets */
+#include <ctype.h>	/* isspace */
 
-/* TODO: create bc_init() functions like in md5 library; need to have two: one
- * for automatic result_len and another for user-specified result_len with
- * documentation stating that you can use user-specified result_len if you are
- * concerned about size
- */
+/* TODO: add appropriate calls to pcre_free (probably just re variables) */
 
 /* maximum length of a line in a format file */
 #define FORMAT_LEN	1024
@@ -128,13 +125,14 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
 	return retval;
 }
 
-int bc_decode_track_fields(char* input, FILE* formats, int track,
+int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	struct bc_decoded* d)
 {
 	pcre* re;
 	const char* error;
 	int erroffset;
 	int rc;
+	int rv;
 	int ovector[3 * MAX_CAPTURED_SUBSTRINGS];
 	int i;
 	int j;
@@ -143,13 +141,47 @@ int bc_decode_track_fields(char* input, FILE* formats, int track,
 	char buf[FORMAT_LEN];
 	const char* result;
 	char* field;
+	char* temp_ptr;
+
+	rv = 0;
 
 	fgets(buf, FORMAT_LEN, formats);
 	buf[strlen(buf) - 1] = '\0';
 
 	/* TODO: parse out string prefix */
+	temp_ptr = strchr(buf, ':');
+	if (NULL == temp_ptr) {
+		if (strcmp(buf, "none") == 0) {
+			if (BC_ENCODING_NONE == encoding) {
+				return 0;
+			} else {
+				return BCINT_NO_MATCH;
+			}
+		} else if (strcmp(buf, "unknown") == 0) {
+			return 0;
+		}
+		/* TODO: print name of encoding type to error method */
+		return BCERR_BAD_FORMAT_ENCODING_TYPE;
+	}
 
-	re = pcre_compile(buf, 0, &error, &erroffset, NULL);
+	/* replace ':' with '\0' so buf represents encoding type */
+	temp_ptr[0] = '\0';
+
+	/* increment past the '\0', which replaced ':' */
+	temp_ptr++;
+
+	/* skip whitespace between ':' and regular expression */
+	while (isspace(temp_ptr[0]) && temp_ptr[0] != '\0') {
+		temp_ptr++;
+	}
+
+	/* if there is no regular expression after the data format specifier */
+	if (temp_ptr[0] == '\0') {
+		return BCERR_FORMAT_MISSING_RE;
+	}
+
+	/* temp_ptr now points at the regular expression */
+	re = pcre_compile(temp_ptr, 0, &error, &erroffset, NULL);
 	if (NULL == re) {
 		/* TODO: find some way to pass back error and erroffset;
 		 * these would be useful to the user
@@ -164,6 +196,30 @@ int bc_decode_track_fields(char* input, FILE* formats, int track,
 	 */
 	pcre_fullinfo(re, NULL, PCRE_INFO_CAPTURECOUNT, &num_fields);
 
+	/* now that we know how many fields to skip, we can validate the
+	 * encoding type and then skip the fields and return if there is an
+	 * error in the type
+	 */
+	if (strcmp(buf, "ALPHA") == 0) {
+		if (BC_ENCODING_ALPHA != encoding) {
+			rv = BCINT_NO_MATCH;
+			goto skip_fields;
+		}
+	} else if (strcmp(buf, "BCD") == 0) {
+		if (BC_ENCODING_BCD != encoding) {
+			rv = BCINT_NO_MATCH;
+			goto skip_fields;
+		}
+	} else if (strcmp(buf, "binary") == 0) {
+		if (BC_ENCODING_BINARY != encoding) {
+			rv = BCINT_NO_MATCH;
+			goto skip_fields;
+		}
+	} else {
+		/* TODO: print name of encoding type to error method */
+		return BCERR_BAD_FORMAT_ENCODING_TYPE;
+	}
+
 	/* TODO: if positive, see if return code matches the number
 	 * of strings we expect (see pcre.txt line 2113)
 	 */
@@ -174,11 +230,8 @@ int bc_decode_track_fields(char* input, FILE* formats, int track,
 	rc = pcre_exec(re, NULL, input, strlen(input), 0, 0,
 		ovector, 3 * MAX_CAPTURED_SUBSTRINGS);
 	if (rc < 0) {
-		/* if there was no match, skip the field descriptions */
-		for (k = 0; k < num_fields &&
-			fgets(buf, FORMAT_LEN, formats) && buf[0] != '\n';
-			k++);
-		return BCINT_NO_MATCH;
+		rv = BCINT_NO_MATCH;
+		goto skip_fields;
 	}
 
 	/* find first entry not filled in by previous tracks */
@@ -230,8 +283,16 @@ int bc_decode_track_fields(char* input, FILE* formats, int track,
 	}
 
 	d->field_names[j][0] = '\0';
+	goto done;
 
-	return 0;
+skip_fields:
+	/* if there was no match, skip the field descriptions */
+	for (k = 0; k < num_fields &&
+		fgets(buf, FORMAT_LEN, formats) && buf[0] != '\n';
+		k++);
+
+done:
+	return rv;
 }
 
 /* TODO: fix bc_decode_fields so it checks if inputted lines are longer than or
@@ -240,6 +301,10 @@ int bc_decode_track_fields(char* input, FILE* formats, int track,
 
 /* TODO: fix bc_decode_fields so it has variable-length field list; requires
  * fixing the constants in the ovector and fields initialization
+ */
+
+/* TODO: fix bc_decode_fields so error handling from multiple
+ * bc_decode_track_fields calls is cleaner
  */
 
 int bc_decode_fields(struct bc_decoded* d)
@@ -269,23 +334,50 @@ int bc_decode_fields(struct bc_decoded* d)
 		strcpy(d->name, name);
 
 
-		err = bc_decode_track_fields(d->t1, formats, BC_TRACK_1, d);
-		rc = err;
-
-		err = bc_decode_track_fields(d->t2, formats, BC_TRACK_2, d);
-		/* if previous tracks were ok but this one returned an error,
-		 * update the overall return code accordingly
-		 */
-		if (0 == rc) {
+		err = bc_decode_track_fields(d->t1, d->t1_encoding, BC_TRACK_1,
+			formats, d);
+		if (0 == err || BCINT_NO_MATCH == err) {
 			rc = err;
+		} else {
+			/* not 0 (match) or BCINT_NO_MATCH; thus a formats file
+			 * parsing error so we cannot continue
+			 */
+			rv = err;
+			break;
 		}
 
-		err = bc_decode_track_fields(d->t3, formats, BC_TRACK_3, d);
+		err = bc_decode_track_fields(d->t2, d->t2_encoding, BC_TRACK_2,
+			formats, d);
 		/* if previous tracks were ok but this one returned an error,
 		 * update the overall return code accordingly
 		 */
-		if (0 == rc) {
-			rc = err;
+		if (0 == err || BCINT_NO_MATCH == err) {
+			if (0 == rc) {
+				rc = err;
+			}
+		} else {
+			/* not 0 (match) or BCINT_NO_MATCH; thus a formats file
+			 * parsing error so we cannot continue
+			 */
+			rv = err;
+			break;
+		}
+
+		err = bc_decode_track_fields(d->t3, d->t3_encoding, BC_TRACK_3,
+			formats, d);
+		/* if previous tracks were ok but this one returned an error,
+		 * update the overall return code accordingly
+		 */
+		if (0 == err || BCINT_NO_MATCH == err) {
+			if (0 == rc) {
+				rc = err;
+			}
+		} else {
+			/* not 0 (match) or BCINT_NO_MATCH; thus a formats file
+			 * parsing error so we cannot continue
+			 */
+			rv = err;
+			break;
 		}
 
 		/* if there are no errors, we found a match */
@@ -324,21 +416,33 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 	/* initialize the fields list */
 	result->field_names[0][0] = '\0';
 
-	/* TODO: find some way to specify which track and error occurred on */
+	/* TODO: find some way to specify which track an error occurred on */
 
 	/* TODO: try reversing the input bits if these don't work */
 
 	/* Track 1 */
-	result->t1_encoding = BC_ENCODING_ALPHA;
-	err = bc_decode_format(in->t1, result->t1, BC_T1_DECODED_SIZE, 7);
-	/* TODO: try other encodings if this doesn't work */
+	if ('\0' == in->t1[0]) {
+		result->t1[0] = '\0';
+		result->t1_encoding = BC_ENCODING_NONE;
+		err = 0;
+	} else {
+		result->t1_encoding = BC_ENCODING_ALPHA;
+		err = bc_decode_format(in->t1, result->t1, BC_T1_DECODED_SIZE, 7);
+		/* TODO: try other encodings if this doesn't work */
+	}
 
 	rc = err;
 
 	/* Track 2 */
-	result->t2_encoding = BC_ENCODING_BCD;
-	err = bc_decode_format(in->t2, result->t2, BC_T2_DECODED_SIZE, 5);
-	/* TODO: try other encodings if this doesn't work */
+	if ('\0' == in->t2[0]) {
+		result->t2[0] = '\0';
+		result->t2_encoding = BC_ENCODING_NONE;
+		err = 0;
+	} else {
+		result->t2_encoding = BC_ENCODING_BCD;
+		err = bc_decode_format(in->t2, result->t2, BC_T2_DECODED_SIZE, 5);
+		/* TODO: try other encodings if this doesn't work */
+	}
 
 	/* if previous tracks were ok but this one returned an error, update
 	 * the overall return code accordingly
@@ -348,9 +452,15 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 	}
 
 	/* Track 3 */
-	result->t3_encoding = BC_ENCODING_ALPHA;
-	err = bc_decode_format(in->t3, result->t3, BC_T1_DECODED_SIZE, 7);
-	/* TODO: try other encodings if this doesn't work */
+	if ('\0' == in->t3[0]) {
+		result->t3[0] = '\0';
+		result->t3_encoding = BC_ENCODING_NONE;
+		err = 0;
+	} else {
+		result->t3_encoding = BC_ENCODING_ALPHA;
+		err = bc_decode_format(in->t3, result->t3, BC_T1_DECODED_SIZE, 7);
+		/* TODO: try other encodings if this doesn't work */
+	}
 
 	/* if previous tracks were ok but this one returned an error, update
 	 * the overall return code accordingly

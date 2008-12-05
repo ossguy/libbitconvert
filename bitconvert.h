@@ -16,7 +16,10 @@ extern "C" {
 #define BCERR_FORMAT_MISSING_PERIOD	-7
 #define BCERR_FORMAT_MISSING_NAME	-8
 #define BCERR_NO_MATCHING_FORMAT	-9
+#define BCERR_BAD_FORMAT_ENCODING_TYPE	-10
+#define BCERR_FORMAT_MISSING_RE		-11
 
+#define BC_ENCODING_NONE  -1	/* track has no data; not the same as binary */
 #define BC_ENCODING_BINARY 1
 #define BC_ENCODING_BCD    4
 #define BC_ENCODING_ALPHA  6
