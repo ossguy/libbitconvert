@@ -22,6 +22,18 @@ char* get_track(FILE* input, char* bits, int bits_len)
 	return bits;
 }
 
+char* encoding_to_str(int track)
+{
+	switch (track) {
+	case BC_ENCODING_NONE:		return "none";
+	case BC_ENCODING_BINARY:	return "binary";
+	case BC_ENCODING_BCD:		return "BCD";
+	case BC_ENCODING_ALPHA:		return "ALPHA";
+	case BC_ENCODING_ASCII:		return "ASCII";
+	default:			return "unknown";
+	}
+}
+
 int main(void)
 {
 	FILE* input;
@@ -45,12 +57,15 @@ int main(void)
 		rv = bc_decode(&in, &result);
 
 		printf("rv: %d\n", rv);
-		printf("Track 1 - data_len: %lu, data:\n`%s`\n",
-			(unsigned long)strlen(result.t1), result.t1);
-		printf("Track 2 - data_len: %lu, data:\n`%s`\n",
-			(unsigned long)strlen(result.t2), result.t2);
-		printf("Track 3 - data_len: %lu, data:\n`%s`\n",
-			(unsigned long)strlen(result.t3), result.t3);
+		printf("Track 1 - data_len: %lu, encoding: %s, data:\n`%s`\n",
+			(unsigned long)strlen(result.t1),
+			encoding_to_str(result.t1_encoding), result.t1);
+		printf("Track 2 - data_len: %lu, encoding: %s, data:\n`%s`\n",
+			(unsigned long)strlen(result.t2),
+			encoding_to_str(result.t2_encoding), result.t2);
+		printf("Track 3 - data_len: %lu, encoding: %s, data:\n`%s`\n",
+			(unsigned long)strlen(result.t3),
+			encoding_to_str(result.t3_encoding), result.t3);
 
 		printf("\n=== Fields ===\n");
 		printf("Card name: %s\n", result.name);
