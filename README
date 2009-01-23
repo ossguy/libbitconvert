@@ -4,7 +4,11 @@ values for cards described in the formats file.
 
 To build the library and test driver, run "make" from the root directory.  This
 should work on any POSIX system, such as Ubuntu, Mac OS X, or Windows with
-MSYS.
+MSYS.  libbitconvert requires libpcre, which is available in Ubuntu 8.04 and
+8.10 by running "sudo apt-get install libpcre3 libpcre3-dev" and should be
+available in Mac OS X with Xcode.  libpcre for Windows can be obtained from
+http://gnuwin32.sourceforge.net/packages/pcre.htm in "Complete package, except
+sources".
 
 To use the library, you can run "./driver" (the test driver), which reads ASCII
 1s and 0s from standard input.  The driver expects Track 1 data to be on the
