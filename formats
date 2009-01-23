@@ -6,11 +6,11 @@ ALPHA: %(?<1>.*)\^(?<2>.*)\^(?<3>.*)\^\?
 BCD: ;(?<1>\d*)=(?<2>\d*)=?
 1. Card number
 2. Other stuff
-ALPHA: %" (?<1>[^ ]* [^ ]*) *(?<2>[^ ]*) *(?<3>[^ ]*) *(?<turtle_wallaby>[^ ]*) *(?<5>[^ ]*) *?
+ALPHA: %" (?<1>[^ ]* [^ ]*) *(?<2>[^ ]*) *(?<3>[^ ]*) *(?<4>[^ ]*) *(?<5>[^ ]*) *?
 1. Postal code
 2. License type
 3. Gender, height, issue date
-turtle_wallaby. License number
+4. License number
 5. Extra data
 
 Credit card
