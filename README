@@ -1,0 +1,23 @@
+This is the README for libbitconvert, a library that decodes bits from magnetic
+stripe cards into the ALPHA and BCD formats and provides a list of fields and
+values for cards described in the formats file.
+
+To build the library and test driver, run "make" from the root directory.  This
+should work on any POSIX system, such as Ubuntu, Mac OS X, or Windows with
+MSYS.
+
+To use the library, you can run "./driver" (the test driver), which reads ASCII
+1s and 0s from standard input.  Alternatively, you can write your own
+application that #includes bitconvert.h and links with libbitconvert.a, but
+beware that the API is not yet stable so you may have to update your
+application regularly to keep up with the changes.
+
+For more information on the ALPHA and BCD formats, see
+http://www.cyberd.co.uk/support/technotes/isocards.htm.
+
+--
+  Copyright (C) 2009  Denver Gingerich <denver@ossguy.com>
+
+  Copying and distribution of this file, with or without modification,
+  are permitted in any medium without royalty provided the copyright
+  notice and this notice are preserved.
