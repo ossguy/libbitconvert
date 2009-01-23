@@ -17,6 +17,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*********************************************************************/
+/***** THIS API IS NOT YET STABLE; FREQUENT CHANGES WILL BE MADE *****/
+/*********************************************************************/
+
 #ifndef H_BITCONVERT
 #define H_BITCONVERT
 
