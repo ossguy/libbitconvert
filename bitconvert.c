@@ -490,10 +490,10 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 		rc = err;
 	}
 
-	/* only do field lookup if there were no errors during parsing */
-	if (0 == rc) {
-		rc = bc_decode_fields(result);
-	}
-
 	return rc;
+}
+
+int bc_find_fields(struct bc_decoded* result)
+{
+	return bc_decode_fields(result);
 }

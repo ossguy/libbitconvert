@@ -97,6 +97,7 @@ struct bc_decoded {
 
 void bc_init(struct bc_input* in);
 int bc_decode(struct bc_input* in, struct bc_decoded* result);
+int bc_find_fields(struct bc_decoded* result);
 
 #ifdef __cplusplus
 }

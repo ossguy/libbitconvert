@@ -86,6 +86,18 @@ int main(void)
 			(unsigned long)strlen(result.t3),
 			encoding_to_str(result.t3_encoding), result.t3);
 
+		if (0 != rv)
+			/* if there was an error, bc_find_fields isn't useful */
+			continue;
+
+		rv = bc_find_fields(&result);
+		if (0 != rv)
+		{
+			printf("Error %d; no fields found for this card\n",
+				rv);
+			continue;
+		}
+
 		printf("\n=== Fields ===\n");
 		printf("Card name: %s\n", result.name);
 		for (i = 0; result.field_names[i][0] != '\0'; i++)
