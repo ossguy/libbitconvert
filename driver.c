@@ -75,7 +75,7 @@ int main(void)
 
 		rv = bc_decode(&in, &result);
 
-		printf("rv: %d\n", rv);
+		printf("Result: %d (%s)\n", rv, bc_strerror(rv));
 		printf("Track 1 - data_len: %lu, encoding: %s, data:\n`%s`\n",
 			(unsigned long)strlen(result.t1),
 			encoding_to_str(result.t1_encoding), result.t1);
@@ -93,8 +93,8 @@ int main(void)
 		rv = bc_find_fields(&result);
 		if (0 != rv)
 		{
-			printf("Error %d; no fields found for this card\n",
-				rv);
+			printf("Error %d (%s); no fields found for this card\n",
+				rv, bc_strerror(rv));
 			continue;
 		}
 

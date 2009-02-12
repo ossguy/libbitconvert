@@ -30,6 +30,7 @@
 extern "C" {
 #endif
 
+/* when adding to this list, also add a case to the switch in bc_strerror */
 #define BCERR_INVALID_INPUT		1
 #define BCERR_PARITY_MISMATCH		2
 #define BCERR_RESULT_FULL		3
@@ -98,6 +99,7 @@ struct bc_decoded {
 void bc_init(struct bc_input* in);
 int bc_decode(struct bc_input* in, struct bc_decoded* result);
 int bc_find_fields(struct bc_decoded* result);
+const char* bc_strerror(int err);
 
 #ifdef __cplusplus
 }
