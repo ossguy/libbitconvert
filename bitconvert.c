@@ -46,6 +46,8 @@
 #define BCINT_NO_MATCH	BCINT_OFFSET + 1
 
 
+void (*send_error)(const char*);
+
 char to_character(char bits, unsigned char value)
 {
 	if (5 == bits)
@@ -422,11 +424,12 @@ int bc_decode_fields(struct bc_decoded* d)
 	return rv;
 }
 
-void bc_init(struct bc_input* in)
+void bc_init(struct bc_input* in, void (*error_callback)(const char*))
 {
 	in->t1[0] = '\0';
 	in->t2[0] = '\0';
 	in->t3[0] = '\0';
+	send_error = error_callback;
 }
 
 int bc_decode(struct bc_input* in, struct bc_decoded* result)

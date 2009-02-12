@@ -53,6 +53,11 @@ char* encoding_to_str(int track)
 	}
 }
 
+void print_error(const char* error)
+{
+	printf("%s\n", error);
+}
+
 int main(void)
 {
 	FILE* input;
@@ -62,7 +67,7 @@ int main(void)
 	int i;
 
 	input = stdin;
-	bc_init(&in);
+	bc_init(&in, print_error);
 
 	while (1)
 	{

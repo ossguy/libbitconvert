@@ -96,7 +96,9 @@ struct bc_decoded {
 };
 
 
-void bc_init(struct bc_input* in);
+/* user may provide a NULL error_callback to ignore error messages */
+void bc_init(struct bc_input* in, void (*error_callback)(const char*));
+
 int bc_decode(struct bc_input* in, struct bc_decoded* result);
 int bc_find_fields(struct bc_decoded* result);
 const char* bc_strerror(int err);
