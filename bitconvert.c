@@ -20,6 +20,8 @@
 /* Assumptions:
  * - character set is ALPHA or BCD
  * - each character is succeeded by an odd parity bit
+ * - libbitconvert is run on a system which uses the ASCII character set (this
+ *   is required for the to_character function to work correctly)
  */
 
 #include "bitconvert.h"
