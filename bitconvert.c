@@ -42,8 +42,8 @@
 
 
 /* return codes internal to the library; these MUST NOT overlap with BCERR_* */
-#define BCINT_OFFSET	-1024
-#define BCINT_NO_MATCH	BCINT_OFFSET -1
+#define BCINT_OFFSET	1024
+#define BCINT_NO_MATCH	BCINT_OFFSET + 1
 
 
 char to_character(char bits, unsigned char value)
