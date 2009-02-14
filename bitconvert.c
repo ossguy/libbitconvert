@@ -21,7 +21,7 @@
  * - character set is ALPHA or BCD
  * - each character is succeeded by an odd parity bit
  * - libbitconvert is run on a system which uses the ASCII character set (this
- *   is required for the to_character function to work correctly)
+ *   is required for the to_ascii function to work correctly)
  */
 
 #include "bitconvert.h"
@@ -48,7 +48,7 @@
 
 void (*send_error)(const char*);
 
-char to_character(char bits, unsigned char value)
+char to_ascii(char bits, unsigned char value)
 {
 	if (5 == bits)
 	{
@@ -123,7 +123,7 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
 
 		if (result_idx < result_len)
 		{
-			result[result_idx] = to_character(format_bits, current_value);
+			result[result_idx] = to_ascii(format_bits, current_value);
 			result_idx++;
 
 			if ('?' == result[result_idx - 1])
