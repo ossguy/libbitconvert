@@ -42,6 +42,7 @@ extern "C" {
 #define BCERR_NO_MATCHING_FORMAT	9
 #define BCERR_BAD_FORMAT_ENCODING_TYPE	10
 #define BCERR_FORMAT_MISSING_RE		11
+#define BCERR_UNIMPLEMENTED		12
 
 #define BC_ENCODING_NONE  -1	/* track has no data; not the same as binary */
 #define BC_ENCODING_BINARY 1
@@ -101,6 +102,8 @@ void bc_init(struct bc_input* in, void (*error_callback)(const char*));
 
 int bc_decode(struct bc_input* in, struct bc_decoded* result);
 int bc_find_fields(struct bc_decoded* result);
+int bc_combine(struct bc_input* forward, struct bc_input* backward,
+	struct bc_input* combined);
 const char* bc_strerror(int err);
 
 #ifdef __cplusplus

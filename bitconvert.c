@@ -424,6 +424,69 @@ int bc_decode_fields(struct bc_decoded* d)
 	return rv;
 }
 
+int bc_combine_track(char* forward, char* backward, char* combined)
+{
+	size_t forward_len;
+	size_t backward_len;
+	char* forward_pos;
+	char* backward_pos;
+	char* forward_start;
+	size_t end_zeroes;
+
+	/* ensure the input consists of exclusively 0s and 1s and find length */
+
+	forward_len = strspn(forward, "01");
+	backward_len = strspn(backward, "01");
+
+	if (forward[forward_len] != '\0') {
+		/* TODO: set the error string to specify forward track */
+		/* TODO: find way to also print track number; another param? */
+		return BCERR_INVALID_INPUT;
+	}
+	if (backward[backward_len] != '\0') {
+		/* TODO: set the error string to specify backward track */
+		return BCERR_INVALID_INPUT;
+	}
+
+
+	/* TODO: we won't need this once we change to dynamic allocation */
+	if (forward_len + backward_len + 1 > BC_T2_INPUT_SIZE) {
+		/* TODO: should be BCERR_INPUT_FULL but I'm not making new error
+		 * code for something that will be removed soon anyway
+		 */
+		return BCERR_RESULT_FULL;
+	}
+
+	forward_pos = strchr(forward, (int)'1');
+	backward_pos = strrchr(backward, (int)'1');
+
+	/* don't bother handling empty strings; too much work for now */
+	/* TODO: should handle this or make it unnecessary */
+	if (NULL == forward_pos || NULL == backward_pos) {
+		return BCERR_UNIMPLEMENTED;
+	}
+
+	end_zeroes = &(backward[backward_len]) - backward_pos;
+	forward_start = forward_pos;
+
+	while (forward_pos != &(forward[forward_len]) &&
+		backward_pos != backward) {
+
+		if (backward_pos[0] != forward_pos[0]) {
+			return -1;
+		}
+
+		forward_pos++;
+		backward_pos--;
+	}
+
+	memset(combined, '0', end_zeroes);
+	memcpy(&(combined[end_zeroes]), forward_start,
+		&(forward[forward_len]) - forward_start);
+
+	return 0;
+}
+
 void bc_init(struct bc_input* in, void (*error_callback)(const char*))
 {
 	in->t1[0] = '\0';
@@ -501,6 +564,12 @@ int bc_find_fields(struct bc_decoded* result)
 	return bc_decode_fields(result);
 }
 
+int bc_combine(struct bc_input* forward, struct bc_input* backward,
+	struct bc_input* combined)
+{
+	return bc_combine_track(forward->t2, backward->t2, combined->t2);
+}
+
 const char* bc_strerror(int err)
 {
 	switch (err)
@@ -517,6 +586,7 @@ const char* bc_strerror(int err)
 	case BCERR_NO_MATCHING_FORMAT:		return "No matching format";
 	case BCERR_BAD_FORMAT_ENCODING_TYPE:	return "Bad format encoding type";
 	case BCERR_FORMAT_MISSING_RE:		return "Format missing regular expression";
+	case BCERR_UNIMPLEMENTED:		return "Unimplemented";
 	default:				return "Unknown error";
 	}
 }
