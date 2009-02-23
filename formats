@@ -24,3 +24,10 @@ BCD: ;(?<1>\d*)=(?<2>\d*)?
 2. Other stuff
 none
 
+M&M Meat Shops MAX card
+ALPHA: %(?<1>\d{8})?
+1. Customer number
+BCD: ;(?<1>\d{8})?
+1. Customer number
+none
+
