@@ -16,6 +16,9 @@ first line of standard input, Track 2 data on the second line of standard
 input, and Track 3 data on the third line of standard input.  To specify no
 data for a particular track, simply use an empty line.
 
+Example bitstreams are available in the test_data directory.  You can run them
+through the test driver using a command like "./driver < test_data/eb_edge".
+
 Alternatively, you can write your own application that #includes bitconvert.h
 and links with libbitconvert.a, but beware that the API is not yet stable so
 you may have to update your application regularly to keep up with the changes.
