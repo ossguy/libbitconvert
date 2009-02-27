@@ -43,6 +43,7 @@ extern "C" {
 #define BCERR_BAD_FORMAT_ENCODING_TYPE	10
 #define BCERR_FORMAT_MISSING_RE		11
 #define BCERR_UNIMPLEMENTED		12
+#define BCERR_OUT_OF_MEMORY		13
 
 #define BC_ENCODING_NONE  -1	/* track has no data; not the same as binary */
 #define BC_ENCODING_BINARY 1
@@ -54,11 +55,6 @@ extern "C" {
 #define BC_TRACK_2	2
 #define BC_TRACK_3	3
 
-#define BC_INPUT_SIZE	4096
-#define BC_T1_INPUT_SIZE BC_INPUT_SIZE
-#define BC_T2_INPUT_SIZE BC_INPUT_SIZE
-#define BC_T3_INPUT_SIZE BC_INPUT_SIZE
-
 #define BC_DECODED_SIZE	1024
 #define BC_T1_DECODED_SIZE BC_DECODED_SIZE
 #define BC_T2_DECODED_SIZE BC_DECODED_SIZE
@@ -68,9 +64,9 @@ extern "C" {
 #define BC_FIELD_SIZE	80
 
 struct bc_input {
-	char t1[BC_T1_INPUT_SIZE];
-	char t2[BC_T2_INPUT_SIZE];
-	char t3[BC_T3_INPUT_SIZE];
+	char* t1;
+	char* t2;
+	char* t3;
 };
 
 struct bc_decoded {
@@ -98,13 +94,15 @@ struct bc_decoded {
 
 
 /* user may provide a NULL error_callback to ignore error messages */
-void bc_init(struct bc_input* in, void (*error_callback)(const char*));
+void bc_init(void (*error_callback)(const char*));
 
 int bc_decode(struct bc_input* in, struct bc_decoded* result);
 int bc_find_fields(struct bc_decoded* result);
 int bc_combine(struct bc_input* forward, struct bc_input* backward,
 	struct bc_input* combined);
 const char* bc_strerror(int err);
+
+void bc_input_free(struct bc_input* in);
 
 #ifdef __cplusplus
 }

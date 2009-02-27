@@ -424,7 +424,7 @@ int bc_decode_fields(struct bc_decoded* d)
 	return rv;
 }
 
-int bc_combine_track(char* forward, char* backward, char* combined)
+int bc_combine_track(char* forward, char* backward, char** combined)
 {
 	size_t forward_len;
 	size_t backward_len;
@@ -449,12 +449,12 @@ int bc_combine_track(char* forward, char* backward, char* combined)
 	}
 
 
-	/* TODO: we won't need this once we change to dynamic allocation */
-	if (forward_len + backward_len + 1 > BC_T2_INPUT_SIZE) {
-		/* TODO: should be BCERR_INPUT_FULL but I'm not making new error
-		 * code for something that will be removed soon anyway
-		 */
-		return BCERR_RESULT_FULL;
+	/* TODO: this is slightly larger than we need, but it may be hard to
+	 * determine exactly how much to allocate
+	 */
+	*combined = malloc(forward_len + backward_len + 1);
+	if (NULL == *combined) {
+		return BCERR_OUT_OF_MEMORY;
 	}
 
 	forward_pos = strchr(forward, (int)'1');
@@ -480,18 +480,15 @@ int bc_combine_track(char* forward, char* backward, char* combined)
 		backward_pos--;
 	}
 
-	memset(combined, '0', end_zeroes);
-	memcpy(&(combined[end_zeroes]), forward_start,
+	memset(*combined, '0', end_zeroes);
+	memcpy(&((*combined)[end_zeroes]), forward_start,
 		&(forward[forward_len]) - forward_start);
 
 	return 0;
 }
 
-void bc_init(struct bc_input* in, void (*error_callback)(const char*))
+void bc_init(void (*error_callback)(const char*))
 {
-	in->t1[0] = '\0';
-	in->t2[0] = '\0';
-	in->t3[0] = '\0';
 	send_error = error_callback;
 }
 
@@ -567,7 +564,9 @@ int bc_find_fields(struct bc_decoded* result)
 int bc_combine(struct bc_input* forward, struct bc_input* backward,
 	struct bc_input* combined)
 {
-	return bc_combine_track(forward->t2, backward->t2, combined->t2);
+	combined->t1 = "";
+	combined->t3 = "";
+	return bc_combine_track(forward->t2, backward->t2, &combined->t2);
 }
 
 const char* bc_strerror(int err)
@@ -587,6 +586,12 @@ const char* bc_strerror(int err)
 	case BCERR_BAD_FORMAT_ENCODING_TYPE:	return "Bad format encoding type";
 	case BCERR_FORMAT_MISSING_RE:		return "Format missing regular expression";
 	case BCERR_UNIMPLEMENTED:		return "Unimplemented";
+	case BCERR_OUT_OF_MEMORY:		return "Out of memory";
 	default:				return "Unknown error";
 	}
+}
+
+void bc_input_free(struct bc_input* in)
+{
+	free(in->t2);
 }

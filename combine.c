@@ -21,6 +21,8 @@
 #include <stdio.h>  /* FILE, fgets, printf */
 #include <string.h> /* strlen */
 
+#define TRACK_INPUT_SIZE 4096
+
 
 char* get_track(FILE* input, char* bits, int bits_len)
 {
@@ -49,32 +51,42 @@ void print_error(const char* error)
 int main(void)
 {
 	FILE* input;
+	char ft1[TRACK_INPUT_SIZE];
+	char ft2[TRACK_INPUT_SIZE];
+	char ft3[TRACK_INPUT_SIZE];
+	char bt1[TRACK_INPUT_SIZE];
+	char bt2[TRACK_INPUT_SIZE];
+	char bt3[TRACK_INPUT_SIZE];
 	struct bc_input forward;
 	struct bc_input backward;
 	struct bc_input combined;
 	int rv;
 
 	input = stdin;
-	bc_init(&forward, print_error);
-	bc_init(&backward, print_error);
-	bc_init(&combined, print_error);
+	bc_init(print_error);
 
 	while (1)
 	{
-		if (NULL == get_track(input, forward.t1, sizeof(forward.t1)))
+		if (NULL == get_track(input, ft1, sizeof(ft1)))
 			break;
-		if (NULL == get_track(input, forward.t2, sizeof(forward.t2)))
+		if (NULL == get_track(input, ft2, sizeof(ft2)))
 			break;
-		if (NULL == get_track(input, forward.t3, sizeof(forward.t3)))
-			break;
-
-		if (NULL == get_track(input, backward.t1, sizeof(backward.t1)))
-			break;
-		if (NULL == get_track(input, backward.t2, sizeof(backward.t2)))
-			break;
-		if (NULL == get_track(input, backward.t3, sizeof(backward.t3)))
+		if (NULL == get_track(input, ft3, sizeof(ft3)))
 			break;
 
+		if (NULL == get_track(input, bt1, sizeof(bt1)))
+			break;
+		if (NULL == get_track(input, bt2, sizeof(bt2)))
+			break;
+		if (NULL == get_track(input, bt3, sizeof(bt3)))
+			break;
+
+		forward.t1 = ft1;
+		forward.t2 = ft2;
+		forward.t3 = ft3;
+		backward.t1 = bt1;
+		backward.t2 = bt2;
+		backward.t3 = bt3;
 		rv = bc_combine(&forward, &backward, &combined);
 
 		printf("Result: %d (%s)\n", rv, bc_strerror(rv));
@@ -84,6 +96,8 @@ int main(void)
 			(unsigned long)strlen(combined.t2), combined.t2);
 		printf("Track 3 - data_len: %lu, data:\n`%s`\n",
 			(unsigned long)strlen(combined.t3), combined.t3);
+
+		bc_input_free(&combined);
 	}
 
 	fclose(input);

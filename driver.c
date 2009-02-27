@@ -21,6 +21,8 @@
 #include <stdio.h>  /* FILE, fgets, printf */
 #include <string.h> /* strlen */
 
+#define TRACK_INPUT_SIZE 4096
+
 
 char* get_track(FILE* input, char* bits, int bits_len)
 {
@@ -61,23 +63,29 @@ void print_error(const char* error)
 int main(void)
 {
 	FILE* input;
+	char t1[TRACK_INPUT_SIZE];
+	char t2[TRACK_INPUT_SIZE];
+	char t3[TRACK_INPUT_SIZE];
 	struct bc_input in;
 	struct bc_decoded result;
 	int rv;
 	int i;
 
 	input = stdin;
-	bc_init(&in, print_error);
+	bc_init(print_error);
 
 	while (1)
 	{
-		if (NULL == get_track(input, in.t1, sizeof(in.t1)))
+		if (NULL == get_track(input, t1, sizeof(t1)))
 			break;
-		if (NULL == get_track(input, in.t2, sizeof(in.t2)))
+		if (NULL == get_track(input, t2, sizeof(t2)))
 			break;
-		if (NULL == get_track(input, in.t3, sizeof(in.t3)))
+		if (NULL == get_track(input, t3, sizeof(t3)))
 			break;
 
+		in.t1 = t1;
+		in.t2 = t2;
+		in.t3 = t3;
 		rv = bc_decode(&in, &result);
 
 		printf("Result: %d (%s)\n", rv, bc_strerror(rv));
