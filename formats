@@ -3,10 +3,10 @@ ALPHA: %(?<1>.*)\^(?<2>.*)\^(?<3>.*)\^\?
 1. Issuing office
 2. Cardholder's full name
 3. Cardholder's address
-BCD: ;(?<1>\d*)=(?<2>\d*)=?
+BCD: ;(?<1>\d*)=(?<2>\d*)=\?
 1. Card number
 2. Other stuff
-ALPHA: %" (?<1>[^ ]* [^ ]*) *(?<2>[^ ]*) *(?<3>[^ ]*) *(?<4>[^ ]*) *(?<5>[^ ]*) *?
+ALPHA: %" (?<1>[^ ]* [^ ]*) *(?<2>[^ ]*) *(?<3>[^ ]*) *(?<4>[^ ]*) *(?<5>[^ ]*) *\?
 1. Postal code
 2. License type
 3. Gender, height, issue date
@@ -14,20 +14,20 @@ ALPHA: %" (?<1>[^ ]* [^ ]*) *(?<2>[^ ]*) *(?<3>[^ ]*) *(?<4>[^ ]*) *(?<5>[^ ]*) 
 5. Extra data
 
 Credit card
-ALPHA: %(?<1>.*)\^(?<2>.*)/(?<3>.*)\^(?<4>\d*)?
+ALPHA: %(?<1>.*)\^(?<2>.*)/(?<3>.*)\^(?<4>\d*)\?
 1. Card number
 2. Last name
 3. First name
 4. Other stuff
-BCD: ;(?<1>\d*)=(?<2>\d*)?
+BCD: ;(?<1>\d*)=(?<2>\d*)\?
 1. Card number
 2. Other stuff
 none
 
 M&M Meat Shops MAX card
-ALPHA: %(?<1>\d{8})?
+ALPHA: %(?<1>\d{8})\?
 1. Customer number
-BCD: ;(?<1>\d{8})?
+BCD: ;(?<1>\d{8})\?
 1. Customer number
 none
 
