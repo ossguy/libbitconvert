@@ -194,7 +194,7 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	temp_ptr++;
 
 	/* skip whitespace between ':' and regular expression */
-	while (isspace(temp_ptr[0]) && temp_ptr[0] != '\0') {
+	while (isspace((int)temp_ptr[0]) && temp_ptr[0] != '\0') {
 		temp_ptr++;
 	}
 
