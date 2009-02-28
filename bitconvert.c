@@ -191,6 +191,7 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int j;
 	int k;
 	int num_fields;
+	int fgets_rc;
 	char buf[FORMAT_LEN];
 	char* buf2;
 	int buf2_size;
@@ -206,13 +207,13 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		return BCERR_OUT_OF_MEMORY;
 	}
 
-	if ( (rc = dynamic_fgets(&buf2, &buf2_size, formats)) ) {
+	if ( (fgets_rc = dynamic_fgets(&buf2, &buf2_size, formats)) ) {
 		free(buf2);
-		if (BCINT_EOF_FOUND == rc) {
+		if (BCINT_EOF_FOUND == fgets_rc) {
 			/* TODO: add line number information to error string */
 			return BCERR_FORMAT_MISSING_TRACK;
 		} else {
-			return rc;
+			return fgets_rc;
 		}
 	}
 	buf2[strlen(buf2) - 1] = '\0';
