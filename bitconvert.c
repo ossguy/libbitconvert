@@ -32,9 +32,6 @@
 
 /* TODO: add appropriate calls to pcre_free (probably just re variables) */
 
-/* maximum length of a line in a format file */
-#define FORMAT_LEN	1024
-
 /* maximum number of captured substrings in a track's regular expression;
  * thus, this is also the maximum number of fields per track
  */
@@ -192,23 +189,22 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int k;
 	int num_fields;
 	int fgets_rc;
-	char buf[FORMAT_LEN];
-	char* buf2;
-	int buf2_size;
+	char* buf;
+	int buf_size;
 	const char* result;
 	char* temp_ptr;
 
 	rv = 0;
 
-	buf2_size = 2;
-	buf2 = malloc(buf2_size);
-	if (NULL == buf2) {
+	buf_size = 2;
+	buf = malloc(buf_size);
+	if (NULL == buf) {
 		/* TODO: add to error string */
 		return BCERR_OUT_OF_MEMORY;
 	}
 
-	if ( (fgets_rc = dynamic_fgets(&buf2, &buf2_size, formats)) ) {
-		free(buf2);
+	if ( (fgets_rc = dynamic_fgets(&buf, &buf_size, formats)) ) {
+		free(buf);
 		if (BCINT_EOF_FOUND == fgets_rc) {
 			/* TODO: add line number information to error string */
 			return BCERR_FORMAT_MISSING_TRACK;
@@ -216,25 +212,25 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 			return fgets_rc;
 		}
 	}
-	buf2[strlen(buf2) - 1] = '\0';
+	buf[strlen(buf) - 1] = '\0';
 
 	/* TODO: parse out string prefix */
-	temp_ptr = strchr(buf2, ':');
+	temp_ptr = strchr(buf, ':');
 	if (NULL == temp_ptr) {
-		if (strcmp(buf2, "none") == 0) {
+		if (strcmp(buf, "none") == 0) {
 			if (BC_ENCODING_NONE == encoding) {
 				return 0;
 			} else {
 				return BCINT_NO_MATCH;
 			}
-		} else if (strcmp(buf2, "unknown") == 0) {
+		} else if (strcmp(buf, "unknown") == 0) {
 			return 0;
 		}
 		/* TODO: print name of encoding type to error method */
 		return BCERR_BAD_FORMAT_ENCODING_TYPE;
 	}
 
-	/* replace ':' with '\0' so buf2 represents encoding type */
+	/* replace ':' with '\0' so buf represents encoding type */
 	temp_ptr[0] = '\0';
 
 	/* increment past the '\0', which replaced ':' */
@@ -270,17 +266,17 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	 * encoding type and then skip the fields and return if there is an
 	 * error in the type
 	 */
-	if (strcmp(buf2, "ALPHA") == 0) {
+	if (strcmp(buf, "ALPHA") == 0) {
 		if (BC_ENCODING_ALPHA != encoding) {
 			rv = BCINT_NO_MATCH;
 			goto skip_fields;
 		}
-	} else if (strcmp(buf2, "BCD") == 0) {
+	} else if (strcmp(buf, "BCD") == 0) {
 		if (BC_ENCODING_BCD != encoding) {
 			rv = BCINT_NO_MATCH;
 			goto skip_fields;
 		}
-	} else if (strcmp(buf2, "binary") == 0) {
+	} else if (strcmp(buf, "binary") == 0) {
 		if (BC_ENCODING_BINARY != encoding) {
 			rv = BCINT_NO_MATCH;
 			goto skip_fields;
@@ -313,9 +309,9 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	/* read until we have read all the fields or we encounter end of file
 	 * or an empty line
 	 */
-	for (k = 0; k < num_fields &&
-		fgets(buf, FORMAT_LEN, formats) && buf[0] != '\n';
-		k++) {
+	for (k = 0; k < num_fields
+		&& !(fgets_rc = dynamic_fgets(&buf, &buf_size, formats))
+		&& buf[0] != '\n'; k++) {
 
 		/* find the first period */
 		temp_ptr = strchr(buf, '.');
@@ -351,10 +347,19 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 
 		temp_ptr[strlen(temp_ptr) - 1] = '\0'; /* remove '\n' */
 
-		strcpy(d->field_names[j], temp_ptr);
-		strcpy(d->field_values[j], result);
+		/* TODO: field_names[] and field_values[] should be
+		 * dynamically-sized so that strcpy can be used instead of
+		 * strncpy
+		 */
+		strncpy(d->field_names[j], temp_ptr, BC_FIELD_SIZE);
+		strncpy(d->field_values[j], result, BC_FIELD_SIZE);
 		d->field_tracks[j] = track;
 		j++;
+	}
+
+	/* if there was an error during dynamic_fgets, return that error */
+	if (0 != fgets_rc && BCINT_EOF_FOUND != fgets_rc) {
+		rv = fgets_rc;
 	}
 
 	d->field_names[j][0] = '\0';
@@ -362,17 +367,20 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 
 skip_fields:
 	/* if there was no match, skip the field descriptions */
-	for (k = 0; k < num_fields &&
-		fgets(buf, FORMAT_LEN, formats) && buf[0] != '\n';
-		k++);
+	for (k = 0; k < num_fields
+		&& !(fgets_rc = dynamic_fgets(&buf, &buf_size, formats))
+		&& buf[0] != '\n'; k++);
+
+	/* if there was an error during dynamic_fgets, return that error */
+	if (0 != fgets_rc && BCINT_EOF_FOUND != fgets_rc) {
+		rv = fgets_rc;
+	}
 
 done:
+	free(buf);
+
 	return rv;
 }
-
-/* TODO: fix bc_decode_fields so it checks if inputted lines are longer than or
- * as long as FORMAT_LEN
- */
 
 /* TODO: fix bc_decode_fields so it has variable-length field list; requires
  * fixing the constants in the ovector and fields initialization
