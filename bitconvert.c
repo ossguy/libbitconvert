@@ -148,6 +148,32 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
 	return retval;
 }
 
+char* dynamic_fgets(char* buf, int size, FILE* file)
+{
+	char* offset;
+	int old_size;
+
+	if (!fgets(buf, size, file)) {
+		return NULL;
+	}
+
+	if (buf[strlen(buf) - 1] == '\n') {
+		return buf;
+	}
+
+	do {
+		/* we haven't read the whole line so grow the buffer */
+		old_size = size;
+		size *= 2;
+		buf = realloc(buf, size);
+		offset = &(buf[old_size - 1]);
+
+	} while ( fgets(offset, old_size + 1, file)
+		&& offset[strlen(offset) - 1] != '\n' );
+
+	return buf;
+}
+
 int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	struct bc_decoded* d)
 {
@@ -162,32 +188,37 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int k;
 	int num_fields;
 	char buf[FORMAT_LEN];
+	char* buf2;
 	const char* result;
 	char* field;
 	char* temp_ptr;
 
 	rv = 0;
 
-	fgets(buf, FORMAT_LEN, formats);
-	buf[strlen(buf) - 1] = '\0';
+	buf2 = malloc(2);
+	if (!dynamic_fgets(buf2, 2, formats)) {
+		/* TODO: add line number information to error string */
+		return BCERR_FORMAT_MISSING_TRACK;
+	}
+	buf2[strlen(buf2) - 1] = '\0';
 
 	/* TODO: parse out string prefix */
-	temp_ptr = strchr(buf, ':');
+	temp_ptr = strchr(buf2, ':');
 	if (NULL == temp_ptr) {
-		if (strcmp(buf, "none") == 0) {
+		if (strcmp(buf2, "none") == 0) {
 			if (BC_ENCODING_NONE == encoding) {
 				return 0;
 			} else {
 				return BCINT_NO_MATCH;
 			}
-		} else if (strcmp(buf, "unknown") == 0) {
+		} else if (strcmp(buf2, "unknown") == 0) {
 			return 0;
 		}
 		/* TODO: print name of encoding type to error method */
 		return BCERR_BAD_FORMAT_ENCODING_TYPE;
 	}
 
-	/* replace ':' with '\0' so buf represents encoding type */
+	/* replace ':' with '\0' so buf2 represents encoding type */
 	temp_ptr[0] = '\0';
 
 	/* increment past the '\0', which replaced ':' */
@@ -223,17 +254,17 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	 * encoding type and then skip the fields and return if there is an
 	 * error in the type
 	 */
-	if (strcmp(buf, "ALPHA") == 0) {
+	if (strcmp(buf2, "ALPHA") == 0) {
 		if (BC_ENCODING_ALPHA != encoding) {
 			rv = BCINT_NO_MATCH;
 			goto skip_fields;
 		}
-	} else if (strcmp(buf, "BCD") == 0) {
+	} else if (strcmp(buf2, "BCD") == 0) {
 		if (BC_ENCODING_BCD != encoding) {
 			rv = BCINT_NO_MATCH;
 			goto skip_fields;
 		}
-	} else if (strcmp(buf, "binary") == 0) {
+	} else if (strcmp(buf2, "binary") == 0) {
 		if (BC_ENCODING_BINARY != encoding) {
 			rv = BCINT_NO_MATCH;
 			goto skip_fields;
@@ -587,6 +618,7 @@ const char* bc_strerror(int err)
 	case BCERR_FORMAT_MISSING_RE:		return "Format missing regular expression";
 	case BCERR_UNIMPLEMENTED:		return "Unimplemented";
 	case BCERR_OUT_OF_MEMORY:		return "Out of memory";
+	case BCERR_FORMAT_MISSING_TRACK:	return "Format missing track description";
 	default:				return "Unknown error";
 	}
 }
