@@ -44,6 +44,7 @@
 /* return codes internal to the library; these MUST NOT overlap with BCERR_* */
 #define BCINT_OFFSET	1024
 #define BCINT_NO_MATCH	BCINT_OFFSET + 1
+#define BCINT_EOF_FOUND	BCINT_OFFSET + 2
 
 
 void (*send_error)(const char*);
@@ -148,30 +149,34 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
 	return retval;
 }
 
-char* dynamic_fgets(char* buf, int size, FILE* file)
+int dynamic_fgets(char** buf, int* size, FILE* file)
 {
 	char* offset;
 	int old_size;
 
-	if (!fgets(buf, size, file)) {
-		return NULL;
+	if (!fgets(*buf, *size, file)) {
+		return BCINT_EOF_FOUND;
 	}
 
-	if (buf[strlen(buf) - 1] == '\n') {
-		return buf;
+	if ((*buf)[strlen(*buf) - 1] == '\n') {
+		return 0;
 	}
 
 	do {
 		/* we haven't read the whole line so grow the buffer */
-		old_size = size;
-		size *= 2;
-		buf = realloc(buf, size);
-		offset = &(buf[old_size - 1]);
+		old_size = *size;
+		*size *= 2;
+		*buf = realloc(*buf, *size);
+		if (NULL == *buf) {
+			/* TODO: add error string here */
+			return BCERR_OUT_OF_MEMORY;
+		}
+		offset = &((*buf)[old_size - 1]);
 
 	} while ( fgets(offset, old_size + 1, file)
 		&& offset[strlen(offset) - 1] != '\n' );
 
-	return buf;
+	return 0;
 }
 
 int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
@@ -189,16 +194,23 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int num_fields;
 	char buf[FORMAT_LEN];
 	char* buf2;
+	int buf2_size;
 	const char* result;
 	char* field;
 	char* temp_ptr;
 
 	rv = 0;
 
-	buf2 = malloc(2);
-	if (!dynamic_fgets(buf2, 2, formats)) {
-		/* TODO: add line number information to error string */
-		return BCERR_FORMAT_MISSING_TRACK;
+	buf2_size = 2;
+	buf2 = malloc(buf2_size);
+	if ( (rc = dynamic_fgets(&buf2, &buf2_size, formats)) ) {
+		free(buf2);
+		if (BCINT_EOF_FOUND == rc) {
+			/* TODO: add line number information to error string */
+			return BCERR_FORMAT_MISSING_TRACK;
+		} else {
+			return rc;
+		}
 	}
 	buf2[strlen(buf2) - 1] = '\0';
 
