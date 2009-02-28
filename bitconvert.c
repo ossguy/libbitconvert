@@ -188,7 +188,6 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int rc;
 	int rv;
 	int ovector[3 * MAX_CAPTURED_SUBSTRINGS];
-	int i;
 	int j;
 	int k;
 	int num_fields;
@@ -196,7 +195,6 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	char* buf2;
 	int buf2_size;
 	const char* result;
-	char* field;
 	char* temp_ptr;
 
 	rv = 0;
@@ -319,9 +317,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		k++) {
 
 		/* find the first period */
-		for (i = 0; buf[i] != '.' && buf[i] != '\0'; i++);
-
-		if ('\0' == buf[i]) {
+		temp_ptr = strchr(buf, '.');
+		if (NULL == temp_ptr) {
 			/* TODO: find some way to return buf; would be
 			 * useful to the user for debugging
 			 */
@@ -329,25 +326,31 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		}
 
 		/* replace '.' with '\0' to make new string */
-		buf[i] = '\0';
+		temp_ptr[0] = '\0';
 		pcre_get_named_substring(re, input, ovector, rc, buf, &result);
 
-		/* need at least enough room for ". " plus at least one
-		 * character for the name of the field plus "\n"
+		/* verify '.' is followed by a space and at least one other
+		 * character (for the field name); as a side effect, the pointer
+		 * will advance to the beginning of the field name
 		 */
-		if (i >= (FORMAT_LEN - 4) ||
-			buf[i + 1] == '\0' || buf[i + 2] == '\0' ||
-			buf[i + 3] == '\0') {
+		temp_ptr++;
+		if (temp_ptr[0] != ' ') {
+			/* TODO: find some way to return buf; would be
+			 * useful to the user for debugging
+			 */
+			return BCERR_FORMAT_MISSING_SPACE;
+		}
+		temp_ptr++;
+		if (temp_ptr[0] == '\0') {
 			/* TODO: find some way to return buf; would be
 			 * useful to the user for debugging
 			 */
 			return BCERR_FORMAT_MISSING_NAME;
 		}
 
-		field = &(buf[i + 2]);
-		field[strlen(field) - 1] = '\0'; /* remove '\n' */
+		temp_ptr[strlen(temp_ptr) - 1] = '\0'; /* remove '\n' */
 
-		strcpy(d->field_names[j], field);
+		strcpy(d->field_names[j], temp_ptr);
 		strcpy(d->field_values[j], result);
 		d->field_tracks[j] = track;
 		j++;
@@ -657,6 +660,7 @@ const char* bc_strerror(int err)
 	case BCERR_UNIMPLEMENTED:		return "Unimplemented";
 	case BCERR_OUT_OF_MEMORY:		return "Out of memory";
 	case BCERR_FORMAT_MISSING_TRACK:	return "Format missing track description";
+	case BCERR_FORMAT_MISSING_SPACE:	return "Format missing space";
 	default:				return "Unknown error";
 	}
 }

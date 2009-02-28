@@ -45,6 +45,7 @@ extern "C" {
 #define BCERR_UNIMPLEMENTED		12
 #define BCERR_OUT_OF_MEMORY		13
 #define BCERR_FORMAT_MISSING_TRACK	14
+#define BCERR_FORMAT_MISSING_SPACE	15
 
 #define BC_ENCODING_NONE  -1	/* track has no data; not the same as binary */
 #define BC_ENCODING_BINARY 1
