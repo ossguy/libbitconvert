@@ -203,6 +203,11 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 
 	buf2_size = 2;
 	buf2 = malloc(buf2_size);
+	if (NULL == buf2) {
+		/* TODO: add to error string */
+		return BCERR_OUT_OF_MEMORY;
+	}
+
 	if ( (rc = dynamic_fgets(&buf2, &buf2_size, formats)) ) {
 		free(buf2);
 		if (BCINT_EOF_FOUND == rc) {
