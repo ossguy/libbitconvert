@@ -377,8 +377,10 @@ int bc_decode_fields(struct bc_decoded* d)
 {
 	int err;
 	int rc;
+	int fgets_rc;
 	int rv;
-	char name[FORMAT_LEN];
+	char* name;
+	int name_size;
 	FILE* formats;
 
 	formats = fopen("formats", "r");
@@ -393,11 +395,19 @@ int bc_decode_fields(struct bc_decoded* d)
 	d->name[0] = '\0';
 	d->field_names[0][0] = '\0';
 
-	while (fgets(name, FORMAT_LEN, formats)) {
+	name_size = 2;
+	name = malloc(name_size);
+	if (NULL == name) {
+		fclose(formats);
+		/* TODO: add to error string */
+		return BCERR_OUT_OF_MEMORY;
+	}
+
+	while ( !(fgets_rc = dynamic_fgets(&name, &name_size, formats)) ) {
 		/* TODO: check lengths before strcpy (in general, but here esp.)
 		 */
 		name[strlen(name) - 1] = '\0'; /* remove '\n' */
-		strcpy(d->name, name);
+		strncpy(d->name, name, sizeof(d->name));
 
 
 		err = bc_decode_track_fields(d->t1, d->t1_encoding, BC_TRACK_1,
@@ -455,11 +465,22 @@ int bc_decode_fields(struct bc_decoded* d)
 		/* skip to beginning of next card specification; each card is
 		 * separated by an empty line
 		 */
-		while (fgets(name, FORMAT_LEN, formats) && name[0] != '\n');
+		while ( !(fgets_rc = dynamic_fgets(&name, &name_size, formats))
+			&& name[0] != '\n' );
+		if (0 != fgets_rc && BCINT_EOF_FOUND != fgets_rc) {
+			break;
+		}
 
 		/* empty the name and fields list */
 		d->name[0] = '\0';
 		d->field_names[0][0] = '\0';
+	}
+
+	free(name);
+
+	/* if there was an error during dynamic_fgets, return that error */
+	if (0 != fgets_rc && BCINT_EOF_FOUND != fgets_rc) {
+		rv = fgets_rc;
 	}
 
 	fclose(formats);
