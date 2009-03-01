@@ -623,7 +623,7 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 		err = 0;
 	} else {
 		result->t3_encoding = BC_ENCODING_ALPHA;
-		err = bc_decode_format(in->t3, result->t3, BC_T1_DECODED_SIZE, 7);
+		err = bc_decode_format(in->t3, result->t3, BC_T3_DECODED_SIZE, 7);
 		/* TODO: try other encodings if this doesn't work */
 	}
 
