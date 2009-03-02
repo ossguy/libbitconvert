@@ -182,7 +182,7 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	pcre* re;
 	const char* error;
 	int erroffset;
-	int rc;
+	int exec_rc;
 	int rv;
 	int ovector[3 * MAX_CAPTURED_SUBSTRINGS];
 	int j;
@@ -293,9 +293,9 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	 * error (ie. invalid input) and return if it is; a list of
 	 * errors is available starting at pcre.txt line 2155
 	 */
-	rc = pcre_exec(re, NULL, input, strlen(input), 0, 0,
+	exec_rc = pcre_exec(re, NULL, input, strlen(input), 0, 0,
 		ovector, 3 * MAX_CAPTURED_SUBSTRINGS);
-	if (rc < 0) {
+	if (exec_rc < 0) {
 		rv = BCINT_NO_MATCH;
 		goto skip_fields;
 	}
@@ -324,7 +324,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 
 		/* replace '.' with '\0' to make new string */
 		temp_ptr[0] = '\0';
-		pcre_get_named_substring(re, input, ovector, rc, buf, &result);
+		pcre_get_named_substring(re, input, ovector, exec_rc, buf,
+			&result);
 
 		/* verify '.' is followed by a space and at least one other
 		 * character (for the field name); as a side effect, the pointer
