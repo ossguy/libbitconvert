@@ -89,15 +89,27 @@ int main(void)
 		rv = bc_decode(&in, &result);
 
 		printf("Result: %d (%s)\n", rv, bc_strerror(rv));
-		printf("Track 1 - data_len: %lu, encoding: %s, data:\n`%s`\n",
-			(unsigned long)strlen(result.t1),
-			encoding_to_str(result.t1_encoding), result.t1);
-		printf("Track 2 - data_len: %lu, encoding: %s, data:\n`%s`\n",
-			(unsigned long)strlen(result.t2),
-			encoding_to_str(result.t2_encoding), result.t2);
-		printf("Track 3 - data_len: %lu, encoding: %s, data:\n`%s`\n",
-			(unsigned long)strlen(result.t3),
-			encoding_to_str(result.t3_encoding), result.t3);
+		if (NULL == result.t1) {
+			printf("Track 1 - no data\n");
+		} else {
+			printf("Track 1 - len: %lu, encode: %s, data:\n`%s`\n",
+				(unsigned long)strlen(result.t1),
+				encoding_to_str(result.t1_encoding), result.t1);
+		}
+		if (NULL == result.t2) {
+			printf("Track 2 - no data\n");
+		} else {
+			printf("Track 2 - len: %lu, encode: %s, data:\n`%s`\n",
+				(unsigned long)strlen(result.t2),
+				encoding_to_str(result.t2_encoding), result.t2);
+		}
+		if (NULL == result.t3) {
+			printf("Track 3 - no data\n");
+		} else {
+			printf("Track 3 - len: %lu, encode: %s, data:\n`%s`\n",
+				(unsigned long)strlen(result.t3),
+				encoding_to_str(result.t3_encoding), result.t3);
+		}
 
 		if (0 != rv)
 			/* if there was an error, bc_find_fields isn't useful */
@@ -125,6 +137,8 @@ int main(void)
 			printf("Track %d - %s: %s\n", result.field_tracks[i],
 				result.field_names[i], result.field_values[i]);
 		}
+
+		bc_decoded_free(&result);
 	}
 
 	fclose(input);

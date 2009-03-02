@@ -57,11 +57,6 @@ extern "C" {
 #define BC_TRACK_2	2
 #define BC_TRACK_3	3
 
-#define BC_DECODED_SIZE	1024
-#define BC_T1_DECODED_SIZE BC_DECODED_SIZE
-#define BC_T2_DECODED_SIZE BC_DECODED_SIZE
-#define BC_T3_DECODED_SIZE BC_DECODED_SIZE
-
 #define BC_NUM_FIELDS	32
 #define BC_FIELD_SIZE	80
 
@@ -72,9 +67,9 @@ struct bc_input {
 };
 
 struct bc_decoded {
-	char t1[BC_T1_DECODED_SIZE];
-	char t2[BC_T2_DECODED_SIZE];
-	char t3[BC_T3_DECODED_SIZE];
+	char* t1;
+	char* t2;
+	char* t3;
 
 	/* one of BC_ENCODING_* */
 	int t1_encoding;
@@ -105,6 +100,7 @@ int bc_combine(struct bc_input* forward, struct bc_input* backward,
 const char* bc_strerror(int err);
 
 void bc_input_free(struct bc_input* in);
+void bc_decoded_free(struct bc_decoded* result);
 
 #ifdef __cplusplus
 }

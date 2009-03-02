@@ -69,7 +69,7 @@ char to_ascii(char bits, unsigned char value)
 	return '\0';
 }
 
-int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char format_bits)
+int bc_decode_format(char* bits, char** result, unsigned char format_bits)
 {
 	int start_idx;
 	int i;
@@ -83,6 +83,17 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
 
 	/* skip leading zeroes; assume 1st character in stream starts with 1 */
 	start_idx = strspn(bits, "0");
+
+	/* Allocate space for the result: the length of the input minus the
+	 * leading zeroes divided by the number of bits per output character.
+	 * Note that we are not allocating space for a possible partial output
+	 * character (ie. if we have 17/5, we malloc only 3 bytes) because a
+	 * partial output character is not meaningful (though we do add 1 for
+	 * the null terminator).  Also note that we are allocating space for
+	 * trailing zeroes because it's hard to determine here how many
+	 * trailing zeroes there will be.
+	 */
+	*result = malloc( ((bits_len - start_idx) / format_bits) + 1 );
 
 	result_idx = 0;
 	for (i = start_idx; (i + format_bits) <= bits_len; i += format_bits)
@@ -119,28 +130,17 @@ int bc_decode_format(char* bits, char* result, size_t result_len, unsigned char 
 			break;
 		}
 
-		if (result_idx < result_len)
-		{
-			result[result_idx] = to_ascii(format_bits, current_value);
-			result_idx++;
+		(*result)[result_idx] = to_ascii(format_bits, current_value);
+		result_idx++;
 
-			if ('?' == result[result_idx - 1])
-			{
-				/* found end sentinel; we're done */
-				break;
-			}
-		}
-		else
+		if ('?' == (*result)[result_idx - 1])
 		{
-			/* set result_idx so result is null-terminated */
-			result_idx = result_len - 1;
-
-			retval = BCERR_RESULT_FULL;
+			/* found end sentinel; we're done */
 			break;
 		}
 	}
 
-	result[result_idx] = '\0';
+	(*result)[result_idx] = '\0';
 	/* no need to increment result_idx; we are done */
 
 	return retval;
@@ -586,26 +586,26 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 	/* TODO: try reversing the input bits if these don't work */
 
 	/* Track 1 */
-	if ('\0' == in->t1[0]) {
-		result->t1[0] = '\0';
+	if (NULL == in->t1 || '\0' == in->t1[0]) {
+		result->t1 = NULL;
 		result->t1_encoding = BC_ENCODING_NONE;
 		err = 0;
 	} else {
 		result->t1_encoding = BC_ENCODING_ALPHA;
-		err = bc_decode_format(in->t1, result->t1, BC_T1_DECODED_SIZE, 7);
+		err = bc_decode_format(in->t1, &result->t1, 7);
 		/* TODO: try other encodings if this doesn't work */
 	}
 
 	rc = err;
 
 	/* Track 2 */
-	if ('\0' == in->t2[0]) {
-		result->t2[0] = '\0';
+	if (NULL == in->t2 || '\0' == in->t2[0]) {
+		result->t2 = NULL;
 		result->t2_encoding = BC_ENCODING_NONE;
 		err = 0;
 	} else {
 		result->t2_encoding = BC_ENCODING_BCD;
-		err = bc_decode_format(in->t2, result->t2, BC_T2_DECODED_SIZE, 5);
+		err = bc_decode_format(in->t2, &result->t2, 5);
 		/* TODO: try other encodings if this doesn't work */
 	}
 
@@ -617,13 +617,13 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 	}
 
 	/* Track 3 */
-	if ('\0' == in->t3[0]) {
-		result->t3[0] = '\0';
+	if (NULL == in->t3 || '\0' == in->t3[0]) {
+		result->t3 = NULL;
 		result->t3_encoding = BC_ENCODING_NONE;
 		err = 0;
 	} else {
 		result->t3_encoding = BC_ENCODING_ALPHA;
-		err = bc_decode_format(in->t3, result->t3, BC_T3_DECODED_SIZE, 7);
+		err = bc_decode_format(in->t3, &result->t3, 7);
 		/* TODO: try other encodings if this doesn't work */
 	}
 
@@ -677,4 +677,11 @@ const char* bc_strerror(int err)
 void bc_input_free(struct bc_input* in)
 {
 	free(in->t2);
+}
+
+void bc_decoded_free(struct bc_decoded* result)
+{
+	free(result->t1);
+	free(result->t2);
+	free(result->t3);
 }
