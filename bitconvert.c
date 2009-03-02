@@ -194,6 +194,7 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int buf_size;
 	const char* result;
 	char* temp_ptr;
+	int field_name_len;
 
 	rv = 0;
 
@@ -305,7 +306,7 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	/* TODO: this could be eliminated by making j a parameter to
 	 * bc_decode_track_fields
 	 */
-	for (j = 0; d->field_names[j][0] != '\0'; j++);
+	for (j = 0; d->field_names[j] != NULL; j++);
 
 	/* read until we have read all the fields or we encounter end of file
 	 * or an empty line
@@ -356,13 +357,16 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 			return BCERR_FORMAT_MISSING_NAME;
 		}
 
-		temp_ptr[strlen(temp_ptr) - 1] = '\0'; /* remove '\n' */
+		field_name_len = strlen(temp_ptr) - 1;
+		temp_ptr[field_name_len] = '\0'; /* remove '\n' */
 
-		/* TODO: field_names[] should be
-		 * dynamically-sized so that strcpy can be used instead of
-		 * strncpy
-		 */
-		strncpy(d->field_names[j], temp_ptr, BC_FIELD_SIZE);
+		d->field_names[j] = malloc(field_name_len + 1);
+		if (NULL == d->field_names[j]) {
+			/* TODO: add information to the error string */
+			return BCERR_OUT_OF_MEMORY;
+		}
+		strcpy(d->field_names[j], temp_ptr);
+
 		d->field_values[j] = result;
 		d->field_tracks[j] = track;
 		j++;
@@ -373,7 +377,7 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		rv = fgets_rc;
 	}
 
-	d->field_names[j][0] = '\0';
+	d->field_names[j] = NULL;
 	goto done;
 
 skip_fields:
@@ -421,7 +425,7 @@ int bc_decode_fields(struct bc_decoded* d)
 
 	/* initialize the name and fields list */
 	d->name = NULL;
-	d->field_names[0][0] = '\0';
+	d->field_names[0] = NULL;
 
 	name_size = 2;
 	name = malloc(name_size);
@@ -497,7 +501,7 @@ int bc_decode_fields(struct bc_decoded* d)
 		}
 
 		/* empty the fields list (name is NULL until match is found) */
-		d->field_names[0][0] = '\0';
+		d->field_names[0] = NULL;
 	}
 
 	/* don't free name if we found a match; the allocated memory is used by
@@ -592,7 +596,7 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 
 	/* initialize name and fields list */
 	result->name = NULL;
-	result->field_names[0][0] = '\0';
+	result->field_names[0] = NULL;
 
 	/* TODO: find some way to specify which track an error occurred on */
 
@@ -702,10 +706,10 @@ void bc_decoded_free(struct bc_decoded* result)
 	free(result->t3);
 	free(result->name);
 
-	for (i = 0; i < BC_NUM_FIELDS && result->field_names[i][0] != '\0';
-		i++) {
-
+	for (i = 0; i < BC_NUM_FIELDS && result->field_names[i] != NULL; i++) {
+		free((char*)result->field_names[i]);
 		free((char*)result->field_values[i]);
+		result->field_names[i] = NULL;
 		result->field_values[i] = NULL;
 	}
 }

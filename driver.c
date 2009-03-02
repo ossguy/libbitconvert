@@ -125,7 +125,7 @@ int main(void)
 
 		printf("\n=== Fields ===\n");
 		printf("Card name: %s\n", result.name);
-		for (i = 0; result.field_names[i][0] != '\0'; i++)
+		for (i = 0; result.field_names[i] != NULL; i++)
 		{
 			/* NOTE: you should verify that the BC_TRACK_* constants
 			 * in the version of libbitconvert that you are using

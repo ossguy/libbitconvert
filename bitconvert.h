@@ -59,7 +59,6 @@ extern "C" {
 #define BC_TRACK_3	3
 
 #define BC_NUM_FIELDS	32
-#define BC_FIELD_SIZE	80
 
 struct bc_input {
 	char* t1;
@@ -80,8 +79,8 @@ struct bc_decoded {
 	/* name of the card; based on the match in the formats file */
 	char* name;
 
-	/* empty string-terminated array of field names */
-	char field_names[BC_NUM_FIELDS][BC_FIELD_SIZE];
+	/* NULL-terminated array of field names */
+	char* field_names[BC_NUM_FIELDS];
 
 	/* empty strings may be valid values; use field_names to find end */
 	const char* field_values[BC_NUM_FIELDS];
