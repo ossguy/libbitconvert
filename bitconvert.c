@@ -48,17 +48,14 @@ void (*send_error)(const char*);
 
 char to_ascii(char bits, unsigned char value)
 {
-	if (5 == bits)
-	{
+	if (5 == bits) {
 		/* the BCD encoding is the subset of ASCII beginning at
 		 * character 48 ('0'), ending at character 63; see
 		 *	http://www.cyberd.co.uk/support/technotes/isocards.htm
 		 *	http://en.wikipedia.org/wiki/ASCII#ASCII_printable_characters
 		 */
 		return '0' + value;
-	}
-	else if (7 == bits)
-	{
+	} else if (7 == bits) {
 		/* the ALPHA encoding is the subset of ASCII beginning at
 		 * character 32 (' '), ending at character 95; see
 		 *	http://www.cyberd.co.uk/support/technotes/isocards.htm
@@ -96,36 +93,29 @@ int bc_decode_format(char* bits, char** result, unsigned char format_bits)
 	*result = malloc( ((bits_len - start_idx) / format_bits) + 1 );
 
 	result_idx = 0;
-	for (i = start_idx; (i + format_bits) <= bits_len; i += format_bits)
-	{
+	for (i = start_idx; (i + format_bits) <= bits_len; i += format_bits) {
 		current_value = 0;
 		parity = 1;
 
-		for (j = 0; j < (format_bits - 1); j++)
-		{
-			if ('1' == bits[i + j])
-			{
+		for (j = 0; j < (format_bits - 1); j++) {
+			if ('1' == bits[i + j]) {
 				/* push a 1 onto the front of our accumulator */
 				current_value |= (1 << j);
 
 				parity ^= 1; /* flip parity bit */
-			}
-			/* assimilating a 0 is a no-op */
-			else if ('0' != bits[i + j])
-			{
+			} else if ('0' != bits[i + j]) {
 				retval = BCERR_INVALID_INPUT;
 				break;
 			}
+			/* assimilating a 0 is a no-op */
 		}
 
 		/* since C doesn't have multi-level breaks */
-		if (0 != retval)
-		{
+		if (0 != retval) {
 			break;
 		}
 
-		if ("01"[parity] != bits[i + j])
-		{
+		if ("01"[parity] != bits[i + j]) {
 			retval = BCERR_PARITY_MISMATCH;
 			break;
 		}
@@ -133,8 +123,7 @@ int bc_decode_format(char* bits, char** result, unsigned char format_bits)
 		(*result)[result_idx] = to_ascii(format_bits, current_value);
 		result_idx++;
 
-		if ('?' == (*result)[result_idx - 1])
-		{
+		if ('?' == (*result)[result_idx - 1]) {
 			/* found end sentinel; we're done */
 			break;
 		}
@@ -666,8 +655,7 @@ int bc_combine(struct bc_input* forward, struct bc_input* backward,
 
 const char* bc_strerror(int err)
 {
-	switch (err)
-	{
+	switch (err) {
 	case 0:					return "Success";
 	case BCERR_INVALID_INPUT:		return "Invalid input";
 	case BCERR_PARITY_MISMATCH:		return "Parity mismatch";

@@ -28,15 +28,13 @@ char* get_track(FILE* input, char* bits, int bits_len)
 {
 	int bits_end;
 
-	if (NULL == fgets(bits, bits_len, input))
-	{
+	if (NULL == fgets(bits, bits_len, input)) {
 		return NULL;
 	}
 	bits_end = strlen(bits);
 
 	/* strip trailing newline */
-	if ('\n' == bits[bits_end - 1])
-	{
+	if ('\n' == bits[bits_end - 1]) {
 		bits[bits_end - 1] = '\0';
 	}
 
@@ -65,21 +63,26 @@ int main(void)
 	input = stdin;
 	bc_init(print_error);
 
-	while (1)
-	{
-		if (NULL == get_track(input, ft1, sizeof(ft1)))
+	while (1) {
+		if (NULL == get_track(input, ft1, sizeof(ft1))) {
 			break;
-		if (NULL == get_track(input, ft2, sizeof(ft2)))
+		}
+		if (NULL == get_track(input, ft2, sizeof(ft2))) {
 			break;
-		if (NULL == get_track(input, ft3, sizeof(ft3)))
+		}
+		if (NULL == get_track(input, ft3, sizeof(ft3))) {
 			break;
+		}
 
-		if (NULL == get_track(input, bt1, sizeof(bt1)))
+		if (NULL == get_track(input, bt1, sizeof(bt1))) {
 			break;
-		if (NULL == get_track(input, bt2, sizeof(bt2)))
+		}
+		if (NULL == get_track(input, bt2, sizeof(bt2))) {
 			break;
-		if (NULL == get_track(input, bt3, sizeof(bt3)))
+		}
+		if (NULL == get_track(input, bt3, sizeof(bt3))) {
 			break;
+		}
 
 		forward.t1 = ft1;
 		forward.t2 = ft2;

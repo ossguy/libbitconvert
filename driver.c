@@ -28,15 +28,13 @@ char* get_track(FILE* input, char* bits, int bits_len)
 {
 	int bits_end;
 
-	if (NULL == fgets(bits, bits_len, input))
-	{
+	if (NULL == fgets(bits, bits_len, input)) {
 		return NULL;
 	}
 	bits_end = strlen(bits);
 
 	/* strip trailing newline */
-	if ('\n' == bits[bits_end - 1])
-	{
+	if ('\n' == bits[bits_end - 1]) {
 		bits[bits_end - 1] = '\0';
 	}
 
@@ -74,14 +72,16 @@ int main(void)
 	input = stdin;
 	bc_init(print_error);
 
-	while (1)
-	{
-		if (NULL == get_track(input, t1, sizeof(t1)))
+	while (1) {
+		if (NULL == get_track(input, t1, sizeof(t1))) {
 			break;
-		if (NULL == get_track(input, t2, sizeof(t2)))
+		}
+		if (NULL == get_track(input, t2, sizeof(t2))) {
 			break;
-		if (NULL == get_track(input, t3, sizeof(t3)))
+		}
+		if (NULL == get_track(input, t3, sizeof(t3))) {
 			break;
+		}
 
 		in.t1 = t1;
 		in.t2 = t2;
@@ -111,13 +111,13 @@ int main(void)
 				encoding_to_str(result.t3_encoding), result.t3);
 		}
 
-		if (0 != rv)
+		if (0 != rv) {
 			/* if there was an error, bc_find_fields isn't useful */
 			continue;
+		}
 
 		rv = bc_find_fields(&result);
-		if (0 != rv)
-		{
+		if (0 != rv) {
 			printf("Error %d (%s); no fields found for this card\n",
 				rv, bc_strerror(rv));
 			continue;
@@ -125,8 +125,7 @@ int main(void)
 
 		printf("\n=== Fields ===\n");
 		printf("Card name: %s\n", result.name);
-		for (i = 0; result.field_names[i] != NULL; i++)
-		{
+		for (i = 0; result.field_names[i] != NULL; i++) {
 			/* NOTE: you should verify that the BC_TRACK_* constants
 			 * in the version of libbitconvert that you are using
 			 * map cleanly onto integers if you wish to print the
