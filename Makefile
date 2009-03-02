@@ -16,7 +16,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 CC = gcc
-CFLAGS = -ansi -pedantic -Wall -Werror
+CFLAGS = -ansi -pedantic -Wall -Wextra -Werror
 
 all: driver combine
 
