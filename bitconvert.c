@@ -409,7 +409,7 @@ int bc_decode_fields(struct bc_decoded* d)
 	rv = BCERR_NO_MATCHING_FORMAT;
 
 	/* initialize the name and fields list */
-	d->name[0] = '\0';
+	d->name = NULL;
 	d->field_names[0][0] = '\0';
 
 	name_size = 2;
@@ -421,11 +421,6 @@ int bc_decode_fields(struct bc_decoded* d)
 	}
 
 	while ( !(fgets_rc = dynamic_fgets(&name, &name_size, formats)) ) {
-		/* TODO: check lengths before strcpy (in general, but here esp.)
-		 */
-		name[strlen(name) - 1] = '\0'; /* remove '\n' */
-		strncpy(d->name, name, sizeof(d->name));
-
 
 		err = bc_decode_track_fields(d->t1, d->t1_encoding, BC_TRACK_1,
 			formats, d);
@@ -475,6 +470,8 @@ int bc_decode_fields(struct bc_decoded* d)
 
 		/* if there are no errors, we found a match */
 		if (0 == rc) {
+			name[strlen(name) - 1] = '\0'; /* remove '\n' */
+			d->name = name;
 			rv = 0;
 			break;
 		}
@@ -488,12 +485,16 @@ int bc_decode_fields(struct bc_decoded* d)
 			break;
 		}
 
-		/* empty the name and fields list */
-		d->name[0] = '\0';
+		/* empty the fields list (name is NULL until match is found) */
 		d->field_names[0][0] = '\0';
 	}
 
-	free(name);
+	/* don't free name if we found a match; the allocated memory is used by
+	 * d->name, which will be passed to the user
+	 */
+	if (0 != rv) {
+		free(name);
+	}
 
 	/* if there was an error during dynamic_fgets, return that error */
 	if (0 != fgets_rc && BCINT_EOF_FOUND != fgets_rc) {
@@ -578,7 +579,8 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 	int err;
 	int rc;
 
-	/* initialize the fields list */
+	/* initialize name and fields list */
+	result->name = NULL;
 	result->field_names[0][0] = '\0';
 
 	/* TODO: find some way to specify which track an error occurred on */
@@ -684,4 +686,5 @@ void bc_decoded_free(struct bc_decoded* result)
 	free(result->t1);
 	free(result->t2);
 	free(result->t3);
+	free(result->name);
 }
