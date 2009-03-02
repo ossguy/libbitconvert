@@ -84,7 +84,7 @@ struct bc_decoded {
 	char field_names[BC_NUM_FIELDS][BC_FIELD_SIZE];
 
 	/* empty strings may be valid values; use field_names to find end */
-	char field_values[BC_NUM_FIELDS][BC_FIELD_SIZE];
+	const char* field_values[BC_NUM_FIELDS];
 
 	/* one of BC_TRACK_* to represent the track the field is stored on */
 	int field_tracks[BC_NUM_FIELDS];

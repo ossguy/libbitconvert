@@ -358,12 +358,12 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 
 		temp_ptr[strlen(temp_ptr) - 1] = '\0'; /* remove '\n' */
 
-		/* TODO: field_names[] and field_values[] should be
+		/* TODO: field_names[] should be
 		 * dynamically-sized so that strcpy can be used instead of
 		 * strncpy
 		 */
 		strncpy(d->field_names[j], temp_ptr, BC_FIELD_SIZE);
-		strncpy(d->field_values[j], result, BC_FIELD_SIZE);
+		d->field_values[j] = result;
 		d->field_tracks[j] = track;
 		j++;
 	}
@@ -695,8 +695,17 @@ void bc_input_free(struct bc_input* in)
 
 void bc_decoded_free(struct bc_decoded* result)
 {
+	int i;
+
 	free(result->t1);
 	free(result->t2);
 	free(result->t3);
 	free(result->name);
+
+	for (i = 0; i < BC_NUM_FIELDS && result->field_names[i][0] != '\0';
+		i++) {
+
+		free((char*)result->field_values[i]);
+		result->field_values[i] = NULL;
+	}
 }
