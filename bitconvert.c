@@ -499,9 +499,6 @@ int bc_decode_fields(struct bc_decoded* d)
 		if (0 != fgets_rc && BCINT_EOF_FOUND != fgets_rc) {
 			break;
 		}
-
-		/* empty the fields list (name is NULL until match is found) */
-		d->field_names[0] = NULL;
 	}
 
 	/* don't free name if we found a match; the allocated memory is used by
