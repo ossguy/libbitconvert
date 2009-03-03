@@ -32,11 +32,6 @@
 
 /* TODO: add appropriate calls to pcre_free (probably just re variables) */
 
-/* maximum number of captured substrings in a track's regular expression;
- * thus, this is also the maximum number of fields per track
- */
-#define MAX_CAPTURED_SUBSTRINGS	64
-
 
 /* return codes internal to the library; these MUST NOT overlap with BCERR_* */
 #define BCINT_OFFSET	1024
@@ -174,7 +169,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int exec_rc;
 	int rc;
 	int rv;
-	int ovector[3 * MAX_CAPTURED_SUBSTRINGS];
+	int* ovector;
+	int ovector_size;
 	int j;
 	int k;
 	int num_fields;
@@ -186,6 +182,7 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int field_name_len;
 
 	rv = 0;
+	ovector = NULL;
 
 	buf_size = 2;
 	buf = malloc(buf_size);
@@ -277,18 +274,41 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		return BCERR_BAD_FORMAT_ENCODING_TYPE;
 	}
 
-	/* TODO: if positive, see if return code matches the number
-	 * of strings we expect (see pcre.txt line 2113)
-	 */
-	/* TODO: on error (negative return code), see if it's a bad
-	 * error (ie. invalid input) and return if it is; a list of
-	 * errors is available starting at pcre.txt line 2155
-	 */
-	exec_rc = pcre_exec(re, NULL, input, strlen(input), 0, 0,
-		ovector, 3 * MAX_CAPTURED_SUBSTRINGS);
-	if (exec_rc < 0) {
-		rv = BCINT_NO_MATCH;
-		goto skip_fields;
+	/* try to match the regular expression */
+	ovector_size = 2 * 3; /* each captured substring needs 3 elements */
+	ovector = malloc(ovector_size * sizeof(*ovector));
+	if (NULL == ovector) {
+		/* TODO: add to error string */
+		return BCERR_OUT_OF_MEMORY;
+	}
+	while (1) {
+		/* TODO: if positive, see if return code matches the number
+		 * of strings we expect (see pcre.txt line 2113)
+		 */
+		/* TODO: on error (negative return code), see if it's a bad
+		 * error (ie. invalid input) and return if it is; a list of
+		 * errors is available starting at pcre.txt line 2155
+		 */
+		exec_rc = pcre_exec(re, NULL, input, strlen(input), 0, 0,
+			ovector, ovector_size);
+		if (exec_rc < 0) {
+			rv = BCINT_NO_MATCH;
+			goto skip_fields;
+		}
+		if (exec_rc > 0) {
+			/* we found a match so break to fill in the fields */
+			break;
+		}
+
+		/* exec_rc == 0, which means ovector is too small (see pcre.txt
+		 * lines 2123-2125) so we need to grow it
+		 */
+		ovector_size *= 2;
+		ovector = realloc(ovector, ovector_size * sizeof(*ovector));
+		if (NULL == ovector) {
+			/* TODO: add to error string */
+			return BCERR_OUT_OF_MEMORY;
+		}
 	}
 
 	/* find first entry not filled in by previous tracks */
@@ -405,6 +425,7 @@ skip_fields:
 
 done:
 	free(buf);
+	free(ovector);
 
 	return rv;
 }
