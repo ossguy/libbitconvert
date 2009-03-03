@@ -58,8 +58,6 @@ extern "C" {
 #define BC_TRACK_2	2
 #define BC_TRACK_3	3
 
-#define BC_NUM_FIELDS	32
-
 struct bc_input {
 	char* t1;
 	char* t2;
@@ -80,13 +78,13 @@ struct bc_decoded {
 	char* name;
 
 	/* NULL-terminated array of field names */
-	char* field_names[BC_NUM_FIELDS];
+	char** field_names;
 
 	/* empty strings may be valid values; use field_names to find end */
-	const char* field_values[BC_NUM_FIELDS];
+	const char** field_values;
 
 	/* one of BC_TRACK_* to represent the track the field is stored on */
-	int field_tracks[BC_NUM_FIELDS];
+	int* field_tracks;
 };
 
 

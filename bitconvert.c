@@ -166,7 +166,7 @@ int dynamic_fgets(char** buf, int* size, FILE* file)
 }
 
 int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
-	struct bc_decoded* d)
+	struct bc_decoded* d, int* fields_size)
 {
 	pcre* re;
 	const char* error;
@@ -346,6 +346,29 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 			return BCERR_FORMAT_MISSING_NAME;
 		}
 
+		/* if we've reached the end of the arrays, grow the arrays */
+		if (j == *fields_size) {
+			*fields_size *= 2;
+			d->field_names = realloc(d->field_names,
+				*fields_size * sizeof(*d->field_names));
+			if (NULL == d->field_names) {
+				/* TODO: add to error string */
+				return BCERR_OUT_OF_MEMORY;
+			}
+			d->field_values = realloc(d->field_values,
+				*fields_size * sizeof(*d->field_values));
+			if (NULL == d->field_values) {
+				/* TODO: add to error string */
+				return BCERR_OUT_OF_MEMORY;
+			}
+			d->field_tracks = realloc(d->field_tracks,
+				*fields_size * sizeof(*d->field_tracks));
+			if (NULL == d->field_tracks) {
+				/* TODO: add to error string */
+				return BCERR_OUT_OF_MEMORY;
+			}
+		}
+
 		field_name_len = strlen(temp_ptr) - 1;
 		temp_ptr[field_name_len] = '\0'; /* remove '\n' */
 
@@ -403,6 +426,7 @@ int bc_decode_fields(struct bc_decoded* d)
 	char* name;
 	int name_size;
 	FILE* formats;
+	int fields_size;
 
 	formats = fopen("formats", "r");
 
@@ -412,9 +436,8 @@ int bc_decode_fields(struct bc_decoded* d)
 
 	rv = BCERR_NO_MATCHING_FORMAT;
 
-	/* initialize the name and fields list */
+	/* initialize the names and fields lists */
 	d->name = NULL;
-	d->field_names[0] = NULL;
 
 	name_size = 2;
 	name = malloc(name_size);
@@ -424,10 +447,31 @@ int bc_decode_fields(struct bc_decoded* d)
 		return BCERR_OUT_OF_MEMORY;
 	}
 
+	fields_size = 2;
+	d->field_names = malloc(fields_size * sizeof(*d->field_names));
+	if (NULL == d->field_names) {
+		fclose(formats);
+		/* TODO: add to error string */
+		return BCERR_OUT_OF_MEMORY;
+	}
+	d->field_values = malloc(fields_size * sizeof(*d->field_values));
+	if (NULL == d->field_values) {
+		fclose(formats);
+		/* TODO: add to error string */
+		return BCERR_OUT_OF_MEMORY;
+	}
+	d->field_tracks = malloc(fields_size * sizeof(*d->field_tracks));
+	if (NULL == d->field_tracks) {
+		fclose(formats);
+		/* TODO: add to error string */
+		return BCERR_OUT_OF_MEMORY;
+	}
+	d->field_names[0] = NULL;
+
 	while ( !(fgets_rc = dynamic_fgets(&name, &name_size, formats)) ) {
 
 		err = bc_decode_track_fields(d->t1, d->t1_encoding, BC_TRACK_1,
-			formats, d);
+			formats, d, &fields_size);
 		if (0 == err || BCINT_NO_MATCH == err) {
 			rc = err;
 		} else {
@@ -439,7 +483,7 @@ int bc_decode_fields(struct bc_decoded* d)
 		}
 
 		err = bc_decode_track_fields(d->t2, d->t2_encoding, BC_TRACK_2,
-			formats, d);
+			formats, d, &fields_size);
 		/* if previous tracks were ok but this one returned an error,
 		 * update the overall return code accordingly
 		 */
@@ -456,7 +500,7 @@ int bc_decode_fields(struct bc_decoded* d)
 		}
 
 		err = bc_decode_track_fields(d->t3, d->t3_encoding, BC_TRACK_3,
-			formats, d);
+			formats, d, &fields_size);
 		/* if previous tracks were ok but this one returned an error,
 		 * update the overall return code accordingly
 		 */
@@ -582,7 +626,7 @@ int bc_decode(struct bc_input* in, struct bc_decoded* result)
 
 	/* initialize name and fields list */
 	result->name = NULL;
-	result->field_names[0] = NULL;
+	result->field_names = NULL;
 
 	/* TODO: find some way to specify which track an error occurred on */
 
@@ -691,10 +735,16 @@ void bc_decoded_free(struct bc_decoded* result)
 	free(result->t3);
 	free(result->name);
 
-	for (i = 0; i < BC_NUM_FIELDS && result->field_names[i] != NULL; i++) {
+	for (i = 0; result->field_names != NULL
+		&& result->field_names[i] != NULL; i++) {
+
 		free((char*)result->field_names[i]);
 		free((char*)result->field_values[i]);
 		result->field_names[i] = NULL;
 		result->field_values[i] = NULL;
 	}
+
+	free(result->field_names);
+	free(result->field_values);
+	free(result->field_tracks);
 }
