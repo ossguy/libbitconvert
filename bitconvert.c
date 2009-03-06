@@ -149,7 +149,7 @@ int dynamic_fgets(char** buf, size_t* size, FILE* file)
 		void* t;
 		old_size = *size;
 		t = realloc(*buf, *size * 2);
-		if (NULL == *buf) {
+		if (NULL == t) {
 			/* TODO: add error string here */
 			return BCERR_OUT_OF_MEMORY;
 		}
