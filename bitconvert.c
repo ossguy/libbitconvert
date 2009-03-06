@@ -171,13 +171,13 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int exec_rc;
 	int rc;
 	int rv;
-	int* ovector;
+	int* ovector = NULL;
 	int ovector_size;
 	size_t j;
-	int k;
-	int num_fields;
-	int fgets_rc;
-	char* buf;
+	int k = 0;
+	int num_fields = -1;
+	int fgets_rc = 0;
+	char* buf = NULL;
 	size_t buf_size;
 	const char* result;
 	char* temp_ptr;
@@ -190,16 +190,18 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	buf = malloc(buf_size);
 	if (NULL == buf) {
 		/* TODO: add to error string */
-		return BCERR_OUT_OF_MEMORY;
+		rv = BCERR_OUT_OF_MEMORY;
+		goto skip_fields;
 	}
 
 	if ( (fgets_rc = dynamic_fgets(&buf, &buf_size, formats)) ) {
-		free(buf);
 		if (BCINT_EOF_FOUND == fgets_rc) {
 			/* TODO: add line number information to error string */
-			return BCERR_FORMAT_MISSING_TRACK;
+			rv = BCERR_FORMAT_MISSING_TRACK;
+			goto skip_fields;
 		} else {
-			return fgets_rc;
+			rv = fgets_rc;
+			goto skip_fields;
 		}
 	}
 	buf[strlen(buf) - 1] = '\0';
@@ -209,15 +211,17 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	if (NULL == temp_ptr) {
 		if (strcmp(buf, "none") == 0) {
 			if (BC_ENCODING_NONE == encoding) {
-				return 0;
+				goto skip_fields;
 			} else {
-				return BCINT_NO_MATCH;
+				rv = BCINT_NO_MATCH;
+				goto skip_fields;
 			}
 		} else if (strcmp(buf, "unknown") == 0) {
-			return 0;
+			goto skip_fields;
 		}
 		/* TODO: print name of encoding type to error method */
-		return BCERR_BAD_FORMAT_ENCODING_TYPE;
+		rv = BCERR_BAD_FORMAT_ENCODING_TYPE;
+		goto skip_fields;
 	}
 
 	/* replace ':' with '\0' so buf represents encoding type */
@@ -233,7 +237,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 
 	/* if there is no regular expression after the data format specifier */
 	if (temp_ptr[0] == '\0') {
-		return BCERR_FORMAT_MISSING_RE;
+		rv = BCERR_FORMAT_MISSING_RE;
+		goto skip_fields;
 	}
 
 	/* temp_ptr now points at the regular expression */
@@ -242,7 +247,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		/* TODO: find some way to pass back error and erroffset;
 		 * these would be useful to the user
 		 */
-		return BCERR_PCRE_COMPILE_FAILED;
+		rv = BCERR_PCRE_COMPILE_FAILED;
+		goto skip_fields;
 	}
 
 	/* XXX: if we want to be really pedantic, check the return code;
@@ -273,7 +279,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		}
 	} else {
 		/* TODO: print name of encoding type to error method */
-		return BCERR_BAD_FORMAT_ENCODING_TYPE;
+		rv = BCERR_BAD_FORMAT_ENCODING_TYPE;
+		goto skip_fields;
 	}
 
 	/* try to match the regular expression */
@@ -281,7 +288,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	ovector = malloc(ovector_size * sizeof(*ovector));
 	if (NULL == ovector) {
 		/* TODO: add to error string */
-		return BCERR_OUT_OF_MEMORY;
+		rv = BCERR_OUT_OF_MEMORY;
+		goto skip_fields;
 	}
 	while (1) {
 		/* TODO: if positive, see if return code matches the number
@@ -309,7 +317,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		ovector = realloc(ovector, ovector_size * sizeof(*ovector));
 		if (NULL == ovector) {
 			/* TODO: add to error string */
-			return BCERR_OUT_OF_MEMORY;
+			rv = BCERR_OUT_OF_MEMORY;
+			goto skip_fields;
 		}
 	}
 
@@ -332,7 +341,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 			/* TODO: find some way to return buf; would be
 			 * useful to the user for debugging
 			 */
-			return BCERR_FORMAT_MISSING_PERIOD;
+			rv = BCERR_FORMAT_MISSING_PERIOD;
+			goto skip_fields;
 		}
 
 		/* replace '.' with '\0' to make new string */
@@ -346,7 +356,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 			 * pcre.txt line 2368 for some details, can probably
 			 * also return memory errors
 			 */
-			return BCERR_FORMAT_NAMED_SUBSTRING;
+			rv = BCERR_FORMAT_NAMED_SUBSTRING;
+			goto skip_fields;
 		}
 
 		/* verify '.' is followed by a space and at least one other
@@ -358,14 +369,16 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 			/* TODO: find some way to return buf; would be
 			 * useful to the user for debugging
 			 */
-			return BCERR_FORMAT_MISSING_SPACE;
+			rv = BCERR_FORMAT_MISSING_SPACE;
+			goto skip_fields;
 		}
 		temp_ptr++;
 		if (temp_ptr[0] == '\0') {
 			/* TODO: find some way to return buf; would be
 			 * useful to the user for debugging
 			 */
-			return BCERR_FORMAT_MISSING_NAME;
+			rv = BCERR_FORMAT_MISSING_NAME;
+			goto skip_fields;
 		}
 
 		/* if we've reached the end of the arrays, grow the arrays */
@@ -375,19 +388,22 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 				*fields_size * sizeof(*d->field_names));
 			if (NULL == d->field_names) {
 				/* TODO: add to error string */
-				return BCERR_OUT_OF_MEMORY;
+				rv = BCERR_OUT_OF_MEMORY;
+				goto skip_fields;
 			}
 			d->field_values = realloc(d->field_values,
 				*fields_size * sizeof(*d->field_values));
 			if (NULL == d->field_values) {
 				/* TODO: add to error string */
-				return BCERR_OUT_OF_MEMORY;
+				rv = BCERR_OUT_OF_MEMORY;
+				goto skip_fields;
 			}
 			d->field_tracks = realloc(d->field_tracks,
 				*fields_size * sizeof(*d->field_tracks));
 			if (NULL == d->field_tracks) {
 				/* TODO: add to error string */
-				return BCERR_OUT_OF_MEMORY;
+				rv = BCERR_OUT_OF_MEMORY;
+				goto skip_fields;
 			}
 		}
 
@@ -397,7 +413,8 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		d->field_names[j] = malloc(field_name_len + 1);
 		if (NULL == d->field_names[j]) {
 			/* TODO: add information to the error string */
-			return BCERR_OUT_OF_MEMORY;
+			rv = BCERR_OUT_OF_MEMORY;
+			goto skip_fields;
 		}
 		strcpy(d->field_names[j], temp_ptr);
 
@@ -415,10 +432,32 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	goto done;
 
 skip_fields:
-	/* if there was no match, skip the field descriptions */
-	for (k = 0; k < num_fields
-		&& !(fgets_rc = dynamic_fgets(&buf, &buf_size, formats))
-		&& buf[0] != '\n'; k++);
+	/* if there was no match, or if we found an error before we
+	 * finished reading the fields, skip the field descriptions
+	 */
+	if (num_fields == -1 && fgets_rc == 0) {
+		int c = getc(formats);
+		if (c != EOF) {
+			ungetc(c,formats);
+		}
+		if (!isdigit(c)) {
+			goto done;
+		}
+	}
+	if (k + 1 < num_fields) {
+		int c = getc(formats);
+		int seen_newline;
+		int at_end;
+		do {
+			seen_newline = (c == '\n');
+			c = getc(formats);
+			at_end = seen_newline && !isdigit(c);
+		} while (c != EOF && !at_end);
+
+		if (c != EOF) {
+			ungetc(c,formats);
+		}
+	}
 
 	/* if there was an error during dynamic_fgets, return that error */
 	if (0 != fgets_rc && BCINT_EOF_FOUND != fgets_rc) {
