@@ -171,13 +171,13 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int exec_rc;
 	int rc;
 	int rv;
-	int* ovector = NULL;
+	int* ovector;
 	int ovector_size;
 	size_t j;
-	int k = 0;
-	int num_fields = -1;
-	int fgets_rc = 0;
-	char* buf = NULL;
+	int k;
+	int num_fields;
+	int fgets_rc;
+	char* buf;
 	size_t buf_size;
 	const char* result;
 	char* temp_ptr;
@@ -185,7 +185,11 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	void* t;
 
 	rv = 0;
+	fgets_rc = 0;
 	ovector = NULL;
+	buf = NULL;
+	k = 0;
+	num_fields = -1;
 
 	buf_size = 2;
 	buf = malloc(buf_size);
@@ -446,7 +450,7 @@ skip_fields:
 	if (num_fields == -1 && fgets_rc == 0) {
 		int c = getc(formats);
 		if (c != EOF) {
-			ungetc(c,formats);
+			ungetc(c, formats);
 		}
 		if (!isdigit(c)) {
 			goto done;
@@ -463,7 +467,7 @@ skip_fields:
 		} while (c != EOF && !at_end);
 
 		if (c != EOF) {
-			ungetc(c,formats);
+			ungetc(c, formats);
 		}
 	}
 
