@@ -26,6 +26,7 @@
 
 #include "bitconvert.h"
 #include <string.h>	/* strspn, strlen */
+#include <stdlib.h>	/* malloc and friends */
 #include <pcre.h>	/* pcre* */
 #include <stdio.h>	/* FILE, fopen, fgets */
 #include <ctype.h>	/* isspace */
@@ -130,10 +131,10 @@ int bc_decode_format(char* bits, char** result, unsigned char format_bits)
 	return retval;
 }
 
-int dynamic_fgets(char** buf, int* size, FILE* file)
+int dynamic_fgets(char** buf, size_t* size, FILE* file)
 {
 	char* offset;
-	int old_size;
+	size_t old_size;
 
 	if (!fgets(*buf, *size, file)) {
 		return BCINT_EOF_FOUND;
@@ -145,15 +146,16 @@ int dynamic_fgets(char** buf, int* size, FILE* file)
 
 	do {
 		/* we haven't read the whole line so grow the buffer */
+		void* t;
 		old_size = *size;
-		*size *= 2;
-		*buf = realloc(*buf, *size);
+		t = realloc(*buf, *size * 2);
 		if (NULL == *buf) {
 			/* TODO: add error string here */
 			return BCERR_OUT_OF_MEMORY;
 		}
-		offset = &((*buf)[old_size - 1]);
-
+		*size *= 2;
+		*buf = t;
+		offset = *buf + old_size - 1;
 	} while ( fgets(offset, old_size + 1, file)
 		&& offset[strlen(offset) - 1] != '\n' );
 
@@ -161,7 +163,7 @@ int dynamic_fgets(char** buf, int* size, FILE* file)
 }
 
 int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
-	struct bc_decoded* d, int* fields_size)
+	struct bc_decoded* d, size_t* fields_size)
 {
 	pcre* re;
 	const char* error;
@@ -171,12 +173,12 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	int rv;
 	int* ovector;
 	int ovector_size;
-	int j;
+	size_t j;
 	int k;
 	int num_fields;
 	int fgets_rc;
 	char* buf;
-	int buf_size;
+	size_t buf_size;
 	const char* result;
 	char* temp_ptr;
 	int field_name_len;
@@ -445,9 +447,9 @@ int bc_decode_fields(struct bc_decoded* d)
 	int fgets_rc;
 	int rv;
 	char* name;
-	int name_size;
+	size_t name_size;
 	FILE* formats;
-	int fields_size;
+	size_t fields_size;
 
 	formats = fopen("formats", "r");
 
