@@ -88,7 +88,7 @@ struct bc_decoded {
 };
 
 
-/* user may provide a NULL error_callback to ignore error messages */
+/* user may provide a null error_callback to ignore error messages */
 void bc_init(void (*error_callback)(const char*));
 
 int bc_decode(struct bc_input* in, struct bc_decoded* result);
