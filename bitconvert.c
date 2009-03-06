@@ -182,6 +182,7 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 	const char* result;
 	char* temp_ptr;
 	int field_name_len;
+	void* t;
 
 	rv = 0;
 	ovector = NULL;
@@ -313,13 +314,14 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 		/* exec_rc == 0, which means ovector is too small (see pcre.txt
 		 * lines 2123-2125) so we need to grow it
 		 */
-		ovector_size *= 2;
-		ovector = realloc(ovector, ovector_size * sizeof(*ovector));
-		if (NULL == ovector) {
+		t = realloc(ovector, 2 * ovector_size * sizeof(*ovector));
+		if (NULL == t) {
 			/* TODO: add to error string */
 			rv = BCERR_OUT_OF_MEMORY;
 			goto skip_fields;
 		}
+		ovector_size *= 2;
+		ovector = t;
 	}
 
 	/* find first entry not filled in by previous tracks */
@@ -383,28 +385,34 @@ int bc_decode_track_fields(char* input, int encoding, int track, FILE* formats,
 
 		/* if we've reached the end of the arrays, grow the arrays */
 		if (j == *fields_size) {
+			t = realloc(d->field_names,
+				2 * *fields_size * sizeof(*d->field_names));
+			if (NULL == t) {
+				/* TODO: add to error string */
+				rv = BCERR_OUT_OF_MEMORY;
+				goto skip_fields;
+			}
+			d->field_names = t;
+
+			t = realloc(d->field_values,
+				2 * *fields_size * sizeof(*d->field_values));
+			if (NULL == t) {
+				/* TODO: add to error string */
+				rv = BCERR_OUT_OF_MEMORY;
+				goto skip_fields;
+			}
+			d->field_values = t;
+
+			t = realloc(d->field_tracks,
+				2 * *fields_size * sizeof(*d->field_tracks));
+			if (NULL == t) {
+				/* TODO: add to error string */
+				rv = BCERR_OUT_OF_MEMORY;
+				goto skip_fields;
+			}
+			d->field_tracks = t;
+
 			*fields_size *= 2;
-			d->field_names = realloc(d->field_names,
-				*fields_size * sizeof(*d->field_names));
-			if (NULL == d->field_names) {
-				/* TODO: add to error string */
-				rv = BCERR_OUT_OF_MEMORY;
-				goto skip_fields;
-			}
-			d->field_values = realloc(d->field_values,
-				*fields_size * sizeof(*d->field_values));
-			if (NULL == d->field_values) {
-				/* TODO: add to error string */
-				rv = BCERR_OUT_OF_MEMORY;
-				goto skip_fields;
-			}
-			d->field_tracks = realloc(d->field_tracks,
-				*fields_size * sizeof(*d->field_tracks));
-			if (NULL == d->field_tracks) {
-				/* TODO: add to error string */
-				rv = BCERR_OUT_OF_MEMORY;
-				goto skip_fields;
-			}
 		}
 
 		field_name_len = strlen(temp_ptr) - 1;
