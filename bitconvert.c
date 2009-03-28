@@ -456,7 +456,7 @@ skip_fields:
 			goto done;
 		}
 	}
-	if (k + 1 < num_fields) {
+	if (k < num_fields) {
 		int c = getc(formats);
 		int seen_newline;
 		int at_end;
