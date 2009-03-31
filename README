@@ -8,8 +8,8 @@ tools (run "sudo apt-get install build-essential"), Mac OS X with Xcode, or
 Windows with MinGW and MSYS.  libbitconvert requires libpcre, which is available
 in Ubuntu 8.04 and 8.10 by running "sudo apt-get install libpcre3 libpcre3-dev".
 Mac OS X users can acquire libpcre by installing the "pcre" port in MacPorts.
-libpcre for Windows is at from http://gnuwin32.sourceforge.net/packages/pcre.htm
-in "Complete package, except sources".
+libpcre for Windows is at http://gnuwin32.sourceforge.net/packages/pcre.htm in
+"Complete package, except sources".
 
 To use the library, you can run "./driver" (the test driver), which reads ASCII
 1s and 0s from standard input.  The driver expects Track 1 data to be on the
