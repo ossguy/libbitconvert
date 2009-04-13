@@ -809,16 +809,16 @@ void bc_decoded_free(struct bc_decoded* result)
 	free(result->t3);
 	free(result->name);
 
-	for (i = 0; result->field_names != NULL
-		&& result->field_names[i] != NULL; i++) {
+	if (result->field_names != NULL) {
+		for (i = 0; result->field_names[i] != NULL; i++) {
+			free((char*)result->field_names[i]);
+			free((char*)result->field_values[i]);
+			result->field_names[i] = NULL;
+			result->field_values[i] = NULL;
+		}
 
-		free((char*)result->field_names[i]);
-		free((char*)result->field_values[i]);
-		result->field_names[i] = NULL;
-		result->field_values[i] = NULL;
+		free(result->field_names);
+		free(result->field_values);
+		free(result->field_tracks);
 	}
-
-	free(result->field_names);
-	free(result->field_values);
-	free(result->field_tracks);
 }
