@@ -33,7 +33,7 @@ extern "C" {
 /* when adding to this list, also add a case to the switch in bc_strerror */
 #define BCERR_INVALID_INPUT		1
 #define BCERR_PARITY_MISMATCH		2
-#define BCERR_RESULT_FULL		3
+/* 3 was used for BCERR_RESULT_FULL; we're using dynamic allocation now */
 #define BCERR_INVALID_TRACK		4
 #define BCERR_NO_FORMAT_FILE		5
 #define BCERR_PCRE_COMPILE_FAILED	6
