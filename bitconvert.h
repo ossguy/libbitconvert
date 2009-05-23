@@ -34,7 +34,7 @@ extern "C" {
 #define BCERR_INVALID_INPUT		1
 #define BCERR_PARITY_MISMATCH		2
 /* 3 was used for BCERR_RESULT_FULL; we're using dynamic allocation now */
-#define BCERR_INVALID_TRACK		4
+/* 4 was used for BCERR_INVALID_TRACK; now we accept all tracks at once */
 #define BCERR_NO_FORMAT_FILE		5
 #define BCERR_PCRE_COMPILE_FAILED	6
 #define BCERR_FORMAT_MISSING_PERIOD	7

@@ -777,7 +777,6 @@ const char* bc_strerror(int err)
 	case 0:					return "Success";
 	case BCERR_INVALID_INPUT:		return "Invalid input";
 	case BCERR_PARITY_MISMATCH:		return "Parity mismatch";
-	case BCERR_INVALID_TRACK:		return "Invalid track";
 	case BCERR_NO_FORMAT_FILE:		return "No format file";
 	case BCERR_PCRE_COMPILE_FAILED:		return "PCRE compile failed";
 	case BCERR_FORMAT_MISSING_PERIOD:	return "Format missing period";
