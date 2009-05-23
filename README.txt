@@ -2,6 +2,11 @@ This is the README for libbitconvert, a library that decodes bits from magnetic
 stripe cards into the ALPHA and BCD formats and provides a list of fields and
 values for cards described in the formats file.
 
+Before checking out the project on Windows, please turn on the "core.autocrlf"
+option in git (run "git config --global core.autocrlf true").  This will convert
+newlines in the checked out files into Windows-style newlines so that editors
+like Notepad can read them easily.
+
 To build the library and test driver, run "make" from the root directory.  This
 should work on any POSIX system with a C compiler, such as Ubuntu with build
 tools (run "sudo apt-get install build-essential"), Mac OS X with Xcode, or
