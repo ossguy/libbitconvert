@@ -502,7 +502,7 @@ int bc_decode_fields(struct bc_decoded* d)
 	FILE* formats;
 	size_t fields_size;
 
-	formats = fopen("formats", "r");
+	formats = fopen("formats.txt", "r");
 
 	if (NULL == formats) {
 		return BCERR_NO_FORMAT_FILE;
