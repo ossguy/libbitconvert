@@ -27,8 +27,11 @@ LDFLAGS = $(shell test -d ../pcre && echo -L../pcre) -lpcre
 
 all: driver combine
 driver: driver.o libbitconvert.a
-driver.o: driver.c bitconvert.h
+	$(CC) driver.o libbitconvert.a -o $@ $(LDFLAGS)
 combine: combine.o libbitconvert.a
+	$(CC) combine.o libbitconvert.a -o $@ $(LDFLAGS)
+
+driver.o: driver.c bitconvert.h
 combine.o: combine.c bitconvert.h
 bitconvert.o: bitconvert.c bitconvert.h
 
