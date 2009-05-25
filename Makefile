@@ -31,4 +31,4 @@ libbitconvert.a: bitconvert.o
 	ar rcs libbitconvert.a bitconvert.o
 
 clean:
-	rm -f *.a *.o driver
+	rm -f *.a *.o driver combine
