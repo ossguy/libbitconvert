@@ -31,3 +31,10 @@ BCD: ;(?<1>\d{8})\?
 1. Customer number
 none
 
+Bit Inspector test bitstream
+ALPHA: %(?<1>TEST)\?
+1. Alphanumeric test data
+BCD: ;(?<1>12345)\?
+1. Numeric test data
+none
+
