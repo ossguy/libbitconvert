@@ -17,8 +17,11 @@
 
 # remove gcc-specific options in CFLAGS to use a different CC
 CC = gcc
-CFLAGS = -ansi -pedantic -Wall -Wextra -Werror
-LDFLAGS = -lpcre
+
+# if ../pcre exists, assume it contains a static libpcre and use it
+CFLAGS = -ansi -pedantic -Wall -Wextra -Werror \
+	$(shell test -d ../pcre && echo -I../pcre -DPCRE_STATIC=1)
+LDFLAGS = $(shell test -d ../pcre && echo -L../pcre) -lpcre
 
 .PHONY: all clean
 
