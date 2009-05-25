@@ -30,7 +30,7 @@ combine.o: combine.c bitconvert.h
 bitconvert.o: bitconvert.c bitconvert.h
 
 libbitconvert.a: bitconvert.o
-	ar rcs libbitconvert.a bitconvert.o
+	$(AR) rcs $@ $<
 
 clean:
-	rm -f *.a *.o driver combine
+	$(RM) *.a *.o driver combine
