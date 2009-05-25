@@ -15,6 +15,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+# remove gcc-specific options in CFLAGS to use a different CC
 CC = gcc
 CFLAGS = -ansi -pedantic -Wall -Wextra -Werror
 
