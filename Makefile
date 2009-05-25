@@ -20,6 +20,8 @@ CC = gcc
 CFLAGS = -ansi -pedantic -Wall -Wextra -Werror
 LDFLAGS = -lpcre
 
+.PHONY: all clean
+
 all: driver combine
 driver: driver.o libbitconvert.a
 driver.o: driver.c bitconvert.h
