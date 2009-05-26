@@ -774,22 +774,38 @@ int bc_combine(struct bc_input* forward, struct bc_input* backward,
 const char* bc_strerror(int err)
 {
 	switch (err) {
-	case 0:					return "Success";
-	case BCERR_INVALID_INPUT:		return "Invalid input";
-	case BCERR_PARITY_MISMATCH:		return "Parity mismatch";
-	case BCERR_NO_FORMAT_FILE:		return "No format file";
-	case BCERR_PCRE_COMPILE_FAILED:		return "PCRE compile failed";
-	case BCERR_FORMAT_MISSING_PERIOD:	return "Format missing period";
-	case BCERR_FORMAT_MISSING_NAME:		return "Format missing name";
-	case BCERR_NO_MATCHING_FORMAT:		return "No matching format";
-	case BCERR_BAD_FORMAT_ENCODING_TYPE:	return "Bad format encoding type";
-	case BCERR_FORMAT_MISSING_RE:		return "Format missing regular expression";
-	case BCERR_UNIMPLEMENTED:		return "Unimplemented";
-	case BCERR_OUT_OF_MEMORY:		return "Out of memory";
-	case BCERR_FORMAT_MISSING_TRACK:	return "Format missing track description";
-	case BCERR_FORMAT_MISSING_SPACE:	return "Format missing space";
-	case BCERR_FORMAT_NAMED_SUBSTRING:	return "Format named substring";
-	default:				return "Unknown error";
+	case 0:
+		return "Success";
+	case BCERR_INVALID_INPUT:
+		return "Invalid input";
+	case BCERR_PARITY_MISMATCH:
+		return "Parity mismatch";
+	case BCERR_NO_FORMAT_FILE:
+		return "No format file";
+	case BCERR_PCRE_COMPILE_FAILED:
+		return "PCRE compile failed";
+	case BCERR_FORMAT_MISSING_PERIOD:
+		return "Format missing period";
+	case BCERR_FORMAT_MISSING_NAME:
+		return "Format missing name";
+	case BCERR_NO_MATCHING_FORMAT:
+		return "No matching format";
+	case BCERR_BAD_FORMAT_ENCODING_TYPE:
+		return "Bad format encoding type";
+	case BCERR_FORMAT_MISSING_RE:
+		return "Format missing regular expression";
+	case BCERR_UNIMPLEMENTED:
+		return "Unimplemented";
+	case BCERR_OUT_OF_MEMORY:
+		return "Out of memory";
+	case BCERR_FORMAT_MISSING_TRACK:
+		return "Format missing track description";
+	case BCERR_FORMAT_MISSING_SPACE:
+		return "Format missing space";
+	case BCERR_FORMAT_NAMED_SUBSTRING:
+		return "Format named substring";
+	default:
+		return "Unknown error";
 	}
 }
 
