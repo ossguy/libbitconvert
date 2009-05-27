@@ -777,11 +777,13 @@ const char* bc_strerror(int err)
 	case 0:
 		return "Success";
 	case BCERR_INVALID_INPUT:
-		return "Invalid input";
+		return "Invalid input - input must contain only 0s or 1s; "
+			"partial results shown";
 	case BCERR_PARITY_MISMATCH:
 		return "Parity mismatch";
 	case BCERR_NO_FORMAT_FILE:
-		return "No format file";
+		return "No formats file - make sure formats.txt is in the "
+			"current directory";
 	case BCERR_PCRE_COMPILE_FAILED:
 		return "PCRE compile failed";
 	case BCERR_FORMAT_MISSING_PERIOD:
@@ -789,7 +791,8 @@ const char* bc_strerror(int err)
 	case BCERR_FORMAT_MISSING_NAME:
 		return "Format missing name";
 	case BCERR_NO_MATCHING_FORMAT:
-		return "No matching format";
+		return "No matching format - to recognize the fields in this "
+			"data, add a format to formats.txt";
 	case BCERR_BAD_FORMAT_ENCODING_TYPE:
 		return "Bad format encoding type";
 	case BCERR_FORMAT_MISSING_RE:
