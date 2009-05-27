@@ -30,23 +30,26 @@
 extern "C" {
 #endif
 
+/* define mask to use for errors related to the formats file */
+#define BCERR_MASK_FORMAT		0x80
+
 /* when adding to this list, also add a case to the switch in bc_strerror */
 #define BCERR_INVALID_INPUT		1
 #define BCERR_PARITY_MISMATCH		2
 /* 3 was used for BCERR_RESULT_FULL; we're using dynamic allocation now */
 /* 4 was used for BCERR_INVALID_TRACK; now we accept all tracks at once */
-#define BCERR_NO_FORMAT_FILE		5
-#define BCERR_PCRE_COMPILE_FAILED	6
-#define BCERR_FORMAT_MISSING_PERIOD	7
-#define BCERR_FORMAT_MISSING_NAME	8
-#define BCERR_NO_MATCHING_FORMAT	9
-#define BCERR_BAD_FORMAT_ENCODING_TYPE	10
-#define BCERR_FORMAT_MISSING_RE		11
+#define BCERR_NO_FORMAT_FILE		(BCERR_MASK_FORMAT | 5)
+#define BCERR_PCRE_COMPILE_FAILED	(BCERR_MASK_FORMAT | 6)
+#define BCERR_FORMAT_MISSING_PERIOD	(BCERR_MASK_FORMAT | 7)
+#define BCERR_FORMAT_MISSING_NAME	(BCERR_MASK_FORMAT | 8)
+#define BCERR_NO_MATCHING_FORMAT	(BCERR_MASK_FORMAT | 9)
+#define BCERR_BAD_FORMAT_ENCODING_TYPE	(BCERR_MASK_FORMAT | 10)
+#define BCERR_FORMAT_MISSING_RE		(BCERR_MASK_FORMAT | 11)
 #define BCERR_UNIMPLEMENTED		12
 #define BCERR_OUT_OF_MEMORY		13
-#define BCERR_FORMAT_MISSING_TRACK	14
-#define BCERR_FORMAT_MISSING_SPACE	15
-#define BCERR_FORMAT_NAMED_SUBSTRING	16
+#define BCERR_FORMAT_MISSING_TRACK	(BCERR_MASK_FORMAT | 14)
+#define BCERR_FORMAT_MISSING_SPACE	(BCERR_MASK_FORMAT | 15)
+#define BCERR_FORMAT_NAMED_SUBSTRING	(BCERR_MASK_FORMAT | 16)
 
 #define BC_ENCODING_NONE  -1	/* track has no data; not the same as binary */
 #define BC_ENCODING_BINARY 1
